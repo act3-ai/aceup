@@ -35,12 +35,7 @@ read -s -r -p "       Enter Token>" TOKEN
 echo ""
 
 # GITLAB CONTAINER REGISTRY CREDENTIALS
-echo ""
-# jar 1FAD9	
-# box 1F4E6	
-# ship 1F6A2
-# delivery truck 1F69A
-echo -e "\U1F6A2 ${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
+echo -e "\n\U1F6A2 ${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
 
 echo -e "Checking for dependencies:"
 
@@ -51,7 +46,7 @@ command -v docker-credential-secretservice >/dev/null 2>&1 || command -v docker-
 echo -e "\tChecking for yq... "
 command -v yq >/dev/null 2>&1 || { echo -e "\tInstalling yq"; brew install yq > "$LOG_FILE"; }
 
-# Use crane to log in to reg.git.act3-ace.com
+# Use crane to log in to reg.git.act3-ace.com (crane checks login)
 # using crane because it checks the login for success, otherwise we would just use the credential helper
 echo -e "\tChecking for crane... "
 # command -v crane >/dev/null 2>&1 || { echo "    Installing crane for auth use"; brew install crane > "$LOG_FILE"; }
@@ -78,10 +73,11 @@ yq e -i -o=json ".credHelpers.\"reg.git.act3-ace.com\" = \"$CREDS_STORE\"" "$HOM
 
 # Steps: registries.conf, credHelpers?, containers/auth.json, 
 # Process: create .docker/config.json, do what already doing, credsStore and add credHelper for reg.git.act3-ace.com
-# registries.conf has a line that is a credential helpers whitelist that needs updated
+# registries.conf has a line that is a credential helpers whitelist that needs updated? Maybe not true?
 # https://docs.docker.com/engine/reference/commandline/login/#credential-helpers
 # https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md#example
 # ^ if you wanna get clever, add the unqualified-search-registries for docker.io
+
 echo "Logging into the ACT3 GitLab Container Registry with crane (reg.git.act3-ace.com)"
 printf '%s\n' "$TOKEN" | crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin > "$LOG_FILE"
 
@@ -115,7 +111,6 @@ echo "Checking for the act3/ace-tools Homebrew Tap... "
 echo -e "act3/ace-tools tap added, check available formulas with \"brew tap-info act3/ace-tools --json | jq .[0].formula_names\""
 
 # GITLAB API CREDENTIALS FOR PROJECT TOOL
-# genie 1F9DE
 echo -e "\n\U1F9DE ${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
 
 # Install act3-pt and log in to git.act3-ace.com
@@ -126,8 +121,6 @@ echo "Logging in with act3-pt"
 printf '%s\n' "$TOKEN" | act3-pt login --name act3 --url git.act3-ace.com --token-stdin > "$LOG_FILE"
 
 # ACE HUB USER CONFIGURATION
-# microscope 1F52C	
-# telescope 1F52D	
 echo -e "\n\U1F52C ${bold}Creating ACE Hub User Configuration file${normal}"
 
 # create with cat >> EOF
@@ -163,10 +156,3 @@ echo "Import this user configuration file in ACE Hub to set up your credentials"
 
 echo ""
 echo -e "\U1F6EB ${bold}Authenticated!${normal}"
-
-# UNICORN='\U1F984'
-# ROCKET='\U1F680'
-# TAKEOFF='\U1F6EB'
-# compass 1F9ED	
-
-# link 1F517	
