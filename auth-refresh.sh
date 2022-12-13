@@ -11,7 +11,16 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-echo -e "\U267B ${bold}Welcome to ACE Auth Refresh. Let's update your system's authentication to ACE services!${normal}"
+echo "           _____ ______ 
+     /\   / ____|  ____|
+    /  \ | |    | |__   
+   / /\ \| |    |  __|  
+  / ____ \ |____| |____ 
+ /_/    \_\_____|______|
+"
+
+recycle='\U267B'
+echo -e "${recycle} ${bold}Welcome to ACE Auth Refresh. Let's update your system's authentication to ACE services!${normal}"
 
 # Default XDG_CACHE_HOME
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
@@ -26,7 +35,8 @@ echo ""
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
 # TODO: check if token is same, but power through for now
-echo -e "\U1F511 ${bold}Create GitLab Personal Access Token${normal}"
+key='\U1F511'
+echo -e "${key} ${bold}Create GitLab Personal Access Token${normal}"
 echo -e "1. Navigate to \U1F517 ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
 echo "2. Create a GitLab Personal Access Token with \"api\" scope"
 echo "3. Enter your username and token:"
@@ -35,7 +45,8 @@ read -s -r -p "       Enter Token>" TOKEN
 echo ""
 
 # GITLAB CONTAINER REGISTRY CREDENTIALS
-echo -e "\n\U1F6A2 ${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
+ship='\U1F6A2'
+echo -e "\n${ship} ${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
 
 echo -e "Checking for dependencies:"
 
