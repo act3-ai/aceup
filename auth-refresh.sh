@@ -93,7 +93,7 @@ echo "Logging into the ACT3 GitLab Container Registry with crane (reg.git.act3-a
 printf '%s\n' "$TOKEN" | crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin > "$LOG_FILE"
 
 # GIT CREDENTIAL STORAGE SETUP
-echo -e "\n\U1F510  ${bold}Setting up git credentials for the ACT3 GitLab Instance${normal}"
+echo -e "\n\U1F510 ${bold}Setting up git credentials for the ACT3 GitLab Instance${normal}"
 
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
 echo "Checking for git-credential-helper... "
