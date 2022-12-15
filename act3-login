@@ -20,7 +20,7 @@ echo "           _____ ______
 "
 
 recycle='\U267B'
-echo -e "${recycle} ${bold}Welcome to ACE Auth Refresh. Let's update your system's authentication to ACE services!${normal}"
+echo -e "${recycle} ${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
 # Default XDG_CACHE_HOME
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
