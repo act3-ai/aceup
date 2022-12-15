@@ -11,19 +11,22 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-echo "           _____ ______ 
-     /\   / ____|  ____|
-    /  \ | |    | |__   
-   / /\ \| |    |  __|  
-  / ____ \ |____| |____ 
- /_/    \_\_____|______|
-"
+echo '
+          _____ _______ ____    _      ____   _____ _____ _   _ 
+    /\   / ____|__   __|___ \  | |    / __ \ / ____|_   _| \ | |
+   /  \ | |       | |    __) | | |   | |__| | |  __  | | |  \| |
+  / /\ \| |       | |   |__ <  | |   |      | | |_ | | | | . ` |
+ / ____ \ |____   | |   ___) | | |___|      | |__| |_| |_| |\  |
+/_/    \_\_____|  |_|  |____/  |_____|______|\_____|_____|_| \_|
+'
 
 recycle='\U267B'
 echo -e "${recycle} ${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
-# Default XDG_CACHE_HOME
+# Default XDG directories used in the script
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
 # Create log file
 timestamp=$(date "+%Y-%m-%d_%H:%M:%S")
@@ -31,6 +34,10 @@ LOG_FILE="$XDG_CACHE_HOME/act3-auth-refresh/logs_$timestamp"
 mkdir -p "$XDG_CACHE_HOME/act3-auth-refresh" && touch "$LOG_FILE"
 echo "Logs: $LOG_FILE"
 echo ""
+
+echo "XDG_CACHE_HOME=$XDG_CACHE_HOME" > "$LOG_FILE"
+echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" > "$LOG_FILE"
+echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" > "$LOG_FILE"
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
@@ -112,6 +119,20 @@ git config --global credential.helper "$GIT_CREDENTIAL_HELPER" > "$LOG_FILE"
 echo "Storing credentials for git (git.act3-ace.com)"
 printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git "credential-$GIT_CREDENTIAL_HELPER" store > "$LOG_FILE"
 
+# echo "Checking for direnv... "
+# command -v direnv >/dev/null 2>&1 || { echo -e "\tInstalling direnv"; brew install direnv > "$LOG_FILE"; }
+
+# mkdir -p "$XDG_CONFIG_HOME/direnv"
+# touch -a "$XDG_CONFIG_HOME/direnv/direnvrc"
+
+# cat <<EOF > "$XDG_CONFIG_HOME/direnv/direnvrc"
+# export NETRC="$XDG_RUNTIME_DIR"/netrc
+# cat <<EOF > $NETRC
+# machine git.act3-ace.com
+#     login your-user-name-here
+#     password $(secret-tool lookup server git.act3-ace.com)
+# EOF
+# EOF
 
 # ACE TOOLS HOMEBREW TAP
 echo -e "\n\U1F37B ${bold}Setting up the ACE Tools Homebrew Tap${normal}"
@@ -134,17 +155,11 @@ printf '%s\n' "$TOKEN" | act3-pt login --name act3 --url git.act3-ace.com --toke
 # ACE HUB USER CONFIGURATION
 echo -e "\n\U1F52C ${bold}Creating ACE Hub User Configuration file${normal}"
 
-# create with cat >> EOF
-# example is in devops docs: https://git.act3-ace.com/devsecops/devsecops.git.act3-ace.com/-/blob/master/docs/ops/k8s-auth/create_user_kubeconfig.sh#L28
-# TODO: put this in XDG_RUNTIME_DIR
-# Default XDG_RUNTIME_DIR
-XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 ACE_HUB_USER_FILE="$XDG_RUNTIME_DIR/ace/hub/$USERNAME.json"
 
 mkdir -p "$XDG_RUNTIME_DIR/ace/hub"
 touch -a "$ACE_HUB_USER_FILE"
 
-XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 mkdir -p "$XDG_CONFIG_HOME/ace/hub"
 ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/$USERNAME.json"
 ln -s "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
