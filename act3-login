@@ -119,20 +119,33 @@ git config --global credential.helper "$GIT_CREDENTIAL_HELPER" > "$LOG_FILE"
 echo "Storing credentials for git (git.act3-ace.com)"
 printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git "credential-$GIT_CREDENTIAL_HELPER" store > "$LOG_FILE"
 
-# echo "Checking for direnv... "
-# command -v direnv >/dev/null 2>&1 || { echo -e "\tInstalling direnv"; brew install direnv > "$LOG_FILE"; }
+# ACE TOOLS HOMEBREW TAP
+echo -e "\n\U2699 ${bold}NETRC Creation (for Golang development)${normal}"
 
-# mkdir -p "$XDG_CONFIG_HOME/direnv"
-# touch -a "$XDG_CONFIG_HOME/direnv/direnvrc"
+create_netrc () {
+echo "Checking for direnv... "
+command -v direnv >/dev/null 2>&1 || { echo -e "\tInstalling direnv"; brew install direnv > "$LOG_FILE"; }
 
-# cat <<EOF > "$XDG_CONFIG_HOME/direnv/direnvrc"
-# export NETRC="$XDG_RUNTIME_DIR"/netrc
-# cat <<EOF > $NETRC
-# machine git.act3-ace.com
-#     login your-user-name-here
-#     password $(secret-tool lookup server git.act3-ace.com)
-# EOF
-# EOF
+mkdir -p "$XDG_CONFIG_HOME/direnv"
+touch -a "$XDG_CONFIG_HOME/direnv/direnvrc"
+
+echo "export NETRC=\"$XDG_RUNTIME_DIR\"/netrc" > "$XDG_CONFIG_HOME/direnv/direnvrc"
+echo "
+cat <<EOF > \$NETRC
+machine git.act3-ace.com
+	login $USERNAME
+	password $(secret-tool lookup server git.act3-ace.com)
+EOF
+" > "$XDG_CONFIG_HOME/direnv/direnvrc"
+
+echo "Configured NETRC to use secure credential storage."
+}
+
+read -r -p "Do you wish to set up a .netrc file? (y/n)>" yn
+case $yn in
+	[Yy]* ) create_netrc;;
+	* ) echo "Skipping NETRC creation";;
+esac
 
 # ACE TOOLS HOMEBREW TAP
 echo -e "\n\U1F37B ${bold}Setting up the ACE Tools Homebrew Tap${normal}"
@@ -162,7 +175,7 @@ touch -a "$ACE_HUB_USER_FILE"
 
 mkdir -p "$XDG_CONFIG_HOME/ace/hub"
 ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/$USERNAME.json"
-ln -s "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
+ln -s -f "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
 
 echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
 # "GIT_PASSWORD": "$USERNAME:$TOKEN"
