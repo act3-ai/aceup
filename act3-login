@@ -32,14 +32,14 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 timestamp=$(date "+%Y-%m-%d_%H:%M:%S")
 LOG_FILE="$XDG_CACHE_HOME/act3-auth-refresh/logs_$timestamp"
 mkdir -p "$XDG_CACHE_HOME/act3-auth-refresh" && touch "$LOG_FILE"
-echo "Logs: $LOG_FILE"
-echo ""
+echo -e "\nLogs: $LOG_FILE"
 
 echo "XDG_CACHE_HOME=$XDG_CACHE_HOME" > "$LOG_FILE"
 echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" > "$LOG_FILE"
 echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" > "$LOG_FILE"
 
 # Update in case yq/jq/crane/docker-credential-helper are out of date
+echo -e "\nUpdating Homebrew Formula dependencies..."
 brew update > "$LOG_FILE"
 brew upgrade > "$LOG_FILE"
 
@@ -47,7 +47,7 @@ brew upgrade > "$LOG_FILE"
 # TODO: link to PAT docs? maybe from dubdubdub
 # TODO: check if token is same, but power through for now
 key='\U1F511'
-echo -e "${key} ${bold}Create GitLab Personal Access Token${normal}"
+echo -e "\n${key} ${bold}Create GitLab Personal Access Token${normal}"
 echo -e "1. Navigate to \U1F517 ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
 echo "2. Create a GitLab Personal Access Token with \"api\" scope"
 echo "3. Enter your username and token:"
