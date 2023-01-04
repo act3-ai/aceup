@@ -41,7 +41,9 @@ echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" > "$LOG_FILE"
 
 # Update in case yq/jq/crane/docker-credential-helper are out of date
 echo -e "\nUpdating Homebrew Formula dependencies..."
+echo "Running brew update..."
 brew update > "$LOG_FILE"
+echo "Running brew upgrade..."
 brew upgrade > "$LOG_FILE"
 
 # Read Personal Access Token
@@ -63,17 +65,16 @@ echo -e "\n${ship} ${bold}Setting up credentials for the ACT3 GitLab Container R
 echo -e "Checking for dependencies:"
 
 echo -e "\tChecking for docker-credential-helper... "
-brew list docker-credential-helper || { echo -e "\tInstalling docker-credential-helper"; brew install docker-credential-helper > "$LOG_FILE"; }
+brew list docker-credential-helper > "$LOG_FILE" || { echo -e "\tInstalling docker-credential-helper"; brew install docker-credential-helper > "$LOG_FILE"; }
 
 # Use yq to add credsStore field to ~/.docker/config.json
 echo -e "\tChecking for yq... "
-brew list yq || { echo -e "\tInstalling yq"; brew install yq > "$LOG_FILE"; }
+brew list yq > "$LOG_FILE" || { echo -e "\tInstalling yq"; brew install yq > "$LOG_FILE"; }
 
 # Use crane to log in to reg.git.act3-ace.com (crane checks login)
 # using crane because it checks the login for success, otherwise we would just use the credential helper
 echo -e "\tChecking for crane... "
-# brew list crane || { echo "    Installing crane for auth use"; brew install crane > "$LOG_FILE"; }
-brew list crane || { echo -e "\tInstalling crane"; brew install crane > "$LOG_FILE"; }
+brew list crane > "$LOG_FILE" || { echo -e "\tInstalling crane"; brew install crane > "$LOG_FILE"; }
 
 CREDS_STORE="secretservice"
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -111,7 +112,7 @@ echo -e "\n\U1F510 ${bold}Setting up git credentials for the ACT3 GitLab Instanc
 echo "Checking for git-credential-helper... "
 GIT_CREDENTIAL_HELPER="credential-libsecret"
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-	brew list git-credential-libsecret || { echo -e "\tInstalling git-credential-libsecret"; brew install git-credential-libsecret > "$LOG_FILE"; }
+	brew list git-credential-libsecret > "$LOG_FILE" || { echo -e "\tInstalling git-credential-libsecret"; brew install git-credential-libsecret > "$LOG_FILE"; }
 	GIT_CREDENTIAL_HELPER="libsecret"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
 	# I think MacOS comes with this pre-installed or it's part of git?
@@ -129,7 +130,7 @@ echo -e "\n\U2699 ${bold}NETRC Creation (for Golang development)${normal}"
 
 create_netrc () {
 echo "Checking for direnv... "
-brew list direnv || { echo -e "\tInstalling direnv"; brew install direnv > "$LOG_FILE"; }
+brew list direnv > "$LOG_FILE" || { echo -e "\tInstalling direnv"; brew install direnv > "$LOG_FILE"; }
 
 mkdir -p "$XDG_CONFIG_HOME/direnv"
 touch -a "$XDG_CONFIG_HOME/direnv/direnvrc"
@@ -169,7 +170,7 @@ echo -e "\n\U1F9DE ${bold}Setting up GitLab API Credentials for ACT3 Project Too
 
 # Install act3-pt and log in to git.act3-ace.com
 echo "Checking for act3-pt... "
-brew list act3-pt || { echo -e "\tInstalling act3-pt"; brew install act3-pt > "$LOG_FILE"; }
+brew list act3-pt > "$LOG_FILE" || { echo -e "\tInstalling act3-pt"; brew install act3-pt > "$LOG_FILE"; }
 
 echo "Logging in with act3-pt"
 printf '%s\n' "$TOKEN" | "$BREW_BIN"/act3-pt login --name act3 --url git.act3-ace.com --token-stdin > "$LOG_FILE"
