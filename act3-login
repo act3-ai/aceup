@@ -158,7 +158,7 @@ echo -e "\n\U1F37B ${bold}Setting up the ACE Tools Homebrew Tap${normal}"
 
 # Tap act3/ace-tools if not already tapped
 echo "Checking for the act3/ace-tools Homebrew Tap... "
-[[ $(brew tap) =~ "act3/ace-tools" ]] || { echo -e "Adding the act3/ace-tools Homebrew Tap"; brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git > "$LOG_FILE"; }
+[[ $(brew tap) =~ "act3/ace-tools" ]] || { echo -e "Adding the act3/ace-tools Homebrew Tap"; brew tap act3/ace-tools https://git.act3-ace.com/ace/homebrew-ace-tools.git > "$LOG_FILE"; }
 echo -e "act3/ace-tools tap added, check available formulas with \"brew tap-info act3/ace-tools --json | jq .[0].formula_names\""
 
 echo "Upgrading Homebrew Formulae"
