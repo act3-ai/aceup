@@ -30,7 +30,7 @@ XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
 # Create log file
-timestamp=$(date "+%Y-%m-%d_%H:%M:%S")
+timestamp=$(date "+%Y-%m-%d_%H-%M-%S")
 LOG_FILE="$XDG_CACHE_HOME/act3-auth-refresh/logs_$timestamp"
 mkdir -p "$XDG_CACHE_HOME/act3-auth-refresh" && touch "$LOG_FILE"
 echo -e "\nLogs: $LOG_FILE"
