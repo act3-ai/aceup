@@ -11,3 +11,21 @@ The ACT3 Login script automatically logs a user into the standard ACT3 services.
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 ```
+
+<!-- If you use zsh as your shell on MacOS, run this command
+
+```bash
+/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+``` -->
+
+## New User Setup
+
+Run the following commands to get your new system set up to work at ACT3
+
+> Linux and MacOS only, requires homebrew and git to be installed.
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+brew install ace-tools
+ace-kubectl-plugins
+```
