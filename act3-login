@@ -193,7 +193,9 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 {
 	"env": {},
 	"envFiles": {
-		"NETRC": "machine git.act3-ace.com login $USERNAME password $TOKEN"
+		"NETRC": "machine git.act3-ace.com login $USERNAME password $TOKEN",
+		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"username:password | base64\"\n    }\n  }\n}",
+		"ACE_DT_CONFIG": "# ACE Data Tool Configuration\napiVersion: config.dt.act3-ace.io/v1alpha1\nkind: Configuration\n\n# cachePruneMax: 500Mi\n# cachePath:\n# chunkSize: 100Mi\n# concurrentHTTP: 25\nregistryAuthFile: /ace/hub/envfile/REGISTRY_AUTH_FILE\n\n# Telemetry configuration\ntelemetry:\n - name: lion\n   url: https://telemetry.lion.act3-ace.ai\ntelemetryUserName: $USERNAME",
 	},
 	"ips": {
 		"act3": {
@@ -207,21 +209,4 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 EOF
 echo "Import this user configuration file in ACE Hub to use your credentials"
 
-echo ""
-echo -e "\U1F6EB ${bold}Authenticated!${normal}"
 
-# kube stuff
-# 1. make .kube folder
-# 2. make the file "~/.kube/act3.yml"
-#    - 0700 perm, only you can read/write
-# 3. Merge with kubectl command and redirect output to "~/.kube/config"
-
-# {"env":{},"envFiles":{"ACE_DT_CONFIG":"# ACE Data Tool Configuration\napiVersion: config.dt.act3-ace.io/v1alpha1\nkind: Configuration\n\n# cachePruneMax: 500Mi\n# cachePath:\n# chunkSize: 100Mi\n# concurrentHTTP: 25\nregistryAuthFile: /ace/hub/envfile/DOCKER_AUTH_CONFIG\n\n# Telemetry configuration\ntelemetry:\n - name: lion\n   url: https://telemetry.lion.act3-ace.ai\ntelemetryUserName: rservaites","DOCKER_AUTH_CONFIG":"{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"username:password | base64\"\n    }\n  }\n}","NETRC":"machine git.act3-ace.com login rservaites password personal access token"},"ips":{"act3":{"registry":"reg.git.act3-ace.com","username":"rservaites","password":"personalaccesstoken"}},"userLaunchTemplates":{}}
-
-# apiVersion: config.dt.act3-ace.io/v1alpha1
-# kind: Configuration
-# registryAuthFile: /ace/hub/envfile/DOCKER_AUTH_CONFIG
-# telemetry:
-#  - name: lion
-#    url: https://telemetry.lion.act3-ace.ai
-# telemetryUserName: rservaites
