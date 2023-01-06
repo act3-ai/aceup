@@ -235,8 +235,8 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 	"env": {},
 	"envFiles": {
 		"NETRC": "machine git.act3-ace.com login $USERNAME password $TOKEN",
-		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$USERNAME:$TOKEN | base64\"\n    }\n  }\n}",
-		"ACE_DT_CONFIG": "# ACE Data Tool Configuration\napiVersion: config.dt.act3-ace.io/v1alpha1\nkind: Configuration\n\n# cachePruneMax: 500Mi\n# cachePath:\n# chunkSize: 100Mi\n# concurrentHTTP: 25\nregistryAuthFile: /ace/hub/envfile/REGISTRY_AUTH_FILE\n\n# Telemetry configuration\ntelemetry:\n - name: lion\n   url: https://telemetry.lion.act3-ace.ai\ntelemetryUserName: $USERNAME"
+		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$("$USERNAME:$TOKEN" | base64)\"\n    }\n  }\n}",
+		"ACE_DT_TELEMETRY_USERNAME": "$USERNAME"
 	},
 	"ips": {
 		"act3": {
