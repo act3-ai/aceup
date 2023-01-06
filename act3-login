@@ -251,38 +251,38 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 EOF
 echo "Import this user configuration file in ACE Hub to use your credentials. This user configuration file will be destroyed on next reboot."
 
-# CLUSTER ACCESS CONFIGURATION
-echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
+# # CLUSTER ACCESS CONFIGURATION
+# echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
 
-# kube stuff
-# 1. make .kube folder
-# 2. make the file "~/.kube/act3.yml"
-#    - 0700 perm, only you can read/write
-# 3. Merge with kubectl command and redirect output to "~/.kube/config"
+# # kube stuff
+# # 1. make .kube folder
+# # 2. make the file "~/.kube/act3.yml"
+# #    - 0700 perm, only you can read/write
+# # 3. Merge with kubectl command and redirect output to "~/.kube/config"
 
-# Dependencies: kubectl and krew
-echo -e "Checking for dependencies:"
+# # Dependencies: kubectl and krew
+# echo -e "Checking for dependencies:"
 
-echo -e "\tChecking for kubectl... "
-brew list kubernetes-cli > "$LOG_FILE" || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli > "$LOG_FILE"; }
+# echo -e "\tChecking for kubectl... "
+# brew list kubernetes-cli > "$LOG_FILE" || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli > "$LOG_FILE"; }
 
-echo -e "\tChecking for krew... "
-brew list krew > "$LOG_FILE" || { echo -e "\tInstalling krew"; brew install krew > "$LOG_FILE"; }
+# echo -e "\tChecking for krew... "
+# brew list krew > "$LOG_FILE" || { echo -e "\tInstalling krew"; brew install krew > "$LOG_FILE"; }
 
-echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl krew install konfig > "$LOG_FILE"
+# echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl krew install konfig > "$LOG_FILE"
 
-# curl the file from wherever it ends up 
-CLUSTERCONFIG="$HOME/.kube/act3.yaml"
-echo -e "Creating cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
-mkdir -p "$HOME/.kube"
-touch -a "$CLUSTERCONFIG"
-chmod 600 "$CLUSTERCONFIG"
-curl --header "PRIVATE-TOKEN: $TOKEN" "https://git.act3-ace.com/api/v4/projects/932/repository/files/kubeconfig.yml?ref=master" | yq e .content | base64 -d > "$CLUSTERCONFIG"
-# mv "$HOME/.kube/config" "$HOME/.kube/config.bak"
-# kubectl konfig merge "$HOME/.kube/config.bak" "$HOME/.kube/act3.yaml" > "$HOME/.kube/config"
-echo -e "Merging with existing configuration. This does not overwrite your existing configuration, delete file \"$HOME/.kube/config\" and run \"kubectl konfig import --save $CLUSTERCONFIG\" to overwrite existing cluster configuration."
-"$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
+# # curl the file from wherever it ends up 
+# CLUSTERCONFIG="$HOME/.kube/act3.yaml"
+# echo -e "Creating cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
+# mkdir -p "$HOME/.kube"
+# touch -a "$CLUSTERCONFIG"
+# chmod 600 "$CLUSTERCONFIG"
+# curl --header "PRIVATE-TOKEN: $TOKEN" "https://git.act3-ace.com/api/v4/projects/932/repository/files/kubeconfig.yml?ref=master" | yq e .content | base64 -d > "$CLUSTERCONFIG"
+# # mv "$HOME/.kube/config" "$HOME/.kube/config.bak"
+# # kubectl konfig merge "$HOME/.kube/config.bak" "$HOME/.kube/act3.yaml" > "$HOME/.kube/config"
+# echo -e "Merging with existing configuration. This does not overwrite your existing configuration, delete file \"$HOME/.kube/config\" and run \"kubectl konfig import --save $CLUSTERCONFIG\" to overwrite existing cluster configuration."
+# "$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
 
-# TODO: check if your namespace exists and create secret if it does
+# # TODO: check if your namespace exists and create secret if it does
 
 echo -e "\n${bold}Authenticated!${normal}"
