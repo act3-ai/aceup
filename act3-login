@@ -49,7 +49,7 @@ brew upgrade > "$LOG_FILE"
 # TODO: link to PAT docs? maybe from dubdubdub
 # TODO: check if token is same, but power through for now
 echo -e "\n${bold}Create GitLab Personal Access Token${normal}"
-echo -e "1. Navigate to \U1F517 ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
+echo -e "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
 echo "2. Create a GitLab Personal Access Token with \"api\" scope"
 echo "3. Enter your username and token:"
 read -r -p "       Enter Username>" USERNAME
@@ -57,8 +57,7 @@ read -s -r -p "       Enter Token>" TOKEN
 echo ""
 
 # GITLAB CONTAINER REGISTRY CREDENTIALS
-ship='\U1F6A2'
-echo -e "\n${ship} ${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
+echo -e "\n${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
 
 echo -e "Checking for dependencies:"
 
