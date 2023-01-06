@@ -230,6 +230,7 @@ echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${no
 # "GIT_PASSWORD": "$USERNAME:$TOKEN"
 # TODO: message saying it was generated
 # TODO: add newlines to NETRC
+#TODO: echo -n if password doesn't work
 cat <<EOF > "$ACE_HUB_USER_FILE"
 {
 	"env": {},
