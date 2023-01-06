@@ -227,7 +227,6 @@ ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/$USERNAME.json"
 ln -s -f "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
 
 echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
-# TODO: add newlines to NETRC
 #TODO: echo -n if password doesn't work
 cat <<EOF > "$ACE_HUB_USER_FILE"
 {
@@ -320,7 +319,6 @@ echo "Merging with existing configuration. This does not overwrite your existing
 "$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
 
 # TODO: check if your namespace exists and create secret if it does
-set -e
 echo "Creating secret in namespace $USERNAME-workspace"
 kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" || echo "Could not create secret, you may have to request to be added to \"ace-project\""
 
