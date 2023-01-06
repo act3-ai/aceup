@@ -227,15 +227,13 @@ ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/$USERNAME.json"
 ln -s -f "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
 
 echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
-# "GIT_PASSWORD": "$USERNAME:$TOKEN"
-# TODO: message saying it was generated
 # TODO: add newlines to NETRC
 #TODO: echo -n if password doesn't work
 cat <<EOF > "$ACE_HUB_USER_FILE"
 {
 	"env": {},
 	"envFiles": {
-		"NETRC": "machine git.act3-ace.com login $USERNAME password $TOKEN",
+		"NETRC": "machine git.act3-ace.com\n  login $USERNAME\n  password $TOKEN",
 		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$(echo -n "$USERNAME:$TOKEN" | base64)\"\n    }\n  }\n}",
 		"ACE_DT_TELEMETRY_USERNAME": "$USERNAME"
 	},
