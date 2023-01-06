@@ -228,12 +228,13 @@ ln -s -f "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
 
 echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
 #TODO: echo -n if password doesn't work
+encoded=$(echo -n "$USERNAME:$TOKEN" | base64)
 cat <<EOF > "$ACE_HUB_USER_FILE"
 {
 	"env": {},
 	"envFiles": {
 		"NETRC": "machine git.act3-ace.com\n  login $USERNAME\n  password $TOKEN",
-		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$(echo -n "$USERNAME:$TOKEN" | base64)\"\n    }\n  }\n}",
+		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$encoded\"\n    }\n  }\n}",
 		"ACE_DT_TELEMETRY_USERNAME": "$USERNAME"
 	},
 	"ips": {
