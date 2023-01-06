@@ -251,38 +251,78 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 EOF
 echo "Import this user configuration file in ACE Hub to use your credentials. This user configuration file will be destroyed on next reboot."
 
-# # CLUSTER ACCESS CONFIGURATION
-# echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
+# CLUSTER ACCESS CONFIGURATION
+echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
 
-# # kube stuff
-# # 1. make .kube folder
-# # 2. make the file "~/.kube/act3.yml"
-# #    - 0700 perm, only you can read/write
-# # 3. Merge with kubectl command and redirect output to "~/.kube/config"
+# Dependencies: kubectl and krew
+echo -e "Checking for dependencies:"
 
-# # Dependencies: kubectl and krew
-# echo -e "Checking for dependencies:"
+echo -e "\tChecking for kubectl... "
+brew list kubernetes-cli > "$LOG_FILE" || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli > "$LOG_FILE"; }
 
-# echo -e "\tChecking for kubectl... "
-# brew list kubernetes-cli > "$LOG_FILE" || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli > "$LOG_FILE"; }
+echo -e "\tChecking for krew... "
+brew list krew > "$LOG_FILE" || { echo -e "\tInstalling krew"; brew install krew > "$LOG_FILE"; }
 
-# echo -e "\tChecking for krew... "
-# brew list krew > "$LOG_FILE" || { echo -e "\tInstalling krew"; brew install krew > "$LOG_FILE"; }
+echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl krew install konfig > "$LOG_FILE"
 
-# echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl krew install konfig > "$LOG_FILE"
+# curl the file from wherever it ends up 
+CLUSTERCONFIG="$HOME/.kube/act3.yaml"
+echo -e "Creating cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
 
-# # curl the file from wherever it ends up 
-# CLUSTERCONFIG="$HOME/.kube/act3.yaml"
-# echo -e "Creating cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
-# mkdir -p "$HOME/.kube"
-# touch -a "$CLUSTERCONFIG"
-# chmod 600 "$CLUSTERCONFIG"
-# curl --header "PRIVATE-TOKEN: $TOKEN" "https://git.act3-ace.com/api/v4/projects/932/repository/files/kubeconfig.yml?ref=master" | yq e .content | base64 -d > "$CLUSTERCONFIG"
-# # mv "$HOME/.kube/config" "$HOME/.kube/config.bak"
-# # kubectl konfig merge "$HOME/.kube/config.bak" "$HOME/.kube/act3.yaml" > "$HOME/.kube/config"
-# echo -e "Merging with existing configuration. This does not overwrite your existing configuration, delete file \"$HOME/.kube/config\" and run \"kubectl konfig import --save $CLUSTERCONFIG\" to overwrite existing cluster configuration."
-# "$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
+# Make sure file exists
+mkdir -p "$HOME/.kube"
+touch -a "$CLUSTERCONFIG"
+chmod 600 "$CLUSTERCONFIG" # permissions for only user read/write
 
-# # TODO: check if your namespace exists and create secret if it does
+# Write to it
+cat <<EOF > "$CLUSTERCONFIG"
+# Cluster config sourced from https://git.act3-ace.com/www/www.git.act3-ace.com/-/blob/master/docs/resources/kubernetes.md
+kind: Config
+apiVersion: v1
+clusters:
+- cluster:
+    server: https://k8s.ace.act3.ai
+  name: lion-public
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJlakNDQVIrZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWtNU0l3SUFZRFZRUUREQmx5YTJVeUxYTmwKY25abGNpMWpZVUF4TmpReU56YzJOamMwTUI0WERUSXlNREV5TVRFME5URXhORm9YRFRNeU1ERXhPVEUwTlRFeApORm93SkRFaU1DQUdBMVVFQXd3WmNtdGxNaTF6WlhKMlpYSXRZMkZBTVRZME1qYzNOalkzTkRCWk1CTUdCeXFHClNNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJMRDRDdkRFVHYwL3VVdUJjUlV1MDcvN3RGMTBVTU9TOWlWa1FrekIKSGg1ai9jak4vUThNM2pycTRYVWttR2VhVG9QalhrZjQ0MjNVRzV3cGM5V3NjdFdqUWpCQU1BNEdBMVVkRHdFQgovd1FFQXdJQ3BEQVBCZ05WSFJNQkFmOEVCVEFEQVFIL01CMEdBMVVkRGdRV0JCUWxKNy8wY2k2VzBKODJLd2NwCjhqMW96Vk5WampBS0JnZ3Foa2pPUFFRREFnTkpBREJHQWlFQTdXTy9NRXlMYnJ6Z2ZacDRRdkx5RzltSjNrMGkKeDFxRFlWSUNWQnYrbG1vQ0lRRExMN3R4UFA1SDB0bndvVW1JTy8xOEtjVUI3MzZOanh3eDB4WnNPeEYzMWc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    server: https://lion-ctl.act3-ace.ai:6443
+  name: lion
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJlRENDQVIrZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWtNU0l3SUFZRFZRUUREQmx5YTJVeUxYTmwKY25abGNpMWpZVUF4TmpjeU56YzROVGcyTUI0WERUSXpNREV3TXpJd05ETXdObG9YRFRNeU1USXpNVEl3TkRNdwpObG93SkRFaU1DQUdBMVVFQXd3WmNtdGxNaTF6WlhKMlpYSXRZMkZBTVRZM01qYzNPRFU0TmpCWk1CTUdCeXFHClNNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJHeUVGN05XVnZUUGt1eHFDREEydlRhZWg4c3crRTZ3V2tCUTFzSysKZzhDSDluVFpIRnUzTm56a3NjOHV5QkhRTnhtZ2JZMGhLY3EyZFJrTjJHbUxBeEtqUWpCQU1BNEdBMVVkRHdFQgovd1FFQXdJQ3BEQVBCZ05WSFJNQkFmOEVCVEFEQVFIL01CMEdBMVVkRGdRV0JCUVZIZmViaHhGZmNFUlhWY2dDCmJ0S2ZkSnl1b1RBS0JnZ3Foa2pPUFFRREFnTkhBREJFQWlCQ0FMb3YyRUptZENJdjZHajNKc2Q1aWtYZmNHMXkKWGo0aFlTeGpPVzFSZWdJZ2ZDczVFZU00a1JIcXpYWkxsMG95Z250SitrelhzOGFEaFdSa09GakE0VmM9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    server: https://meerkat-ctl.act3-ace.ai:6443
+  name: meerkat
+users:
+- name: gitlab-oidc
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - oidc-login
+      - get-token
+      - --oidc-issuer-url=https://git.act3-ace.com
+      - --oidc-client-id=f784af5244e3f5875d932f99a82b0c4147b17fa656e58e0e1acaea3621db2c33
+      command: kubectl
+      env: null
+      provideClusterInfo: false
+contexts:
+- context:
+    cluster: lion-public
+    user: gitlab-oidc
+  name: lion
+- context:
+    cluster: meerkat
+    user: gitlab-oidc
+  name: meerkat
+current-context: lion
+EOF
+
+# mv "$HOME/.kube/config" "$HOME/.kube/config.bak"
+# kubectl konfig merge "$HOME/.kube/config.bak" "$HOME/.kube/act3.yaml" > "$HOME/.kube/config"
+echo "Merging with existing configuration. This does not overwrite your existing configuration, delete file \"$HOME/.kube/config\" and run \"kubectl konfig import --save $CLUSTERCONFIG\" to overwrite existing cluster configuration."
+"$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
+
+# TODO: check if your namespace exists and create secret if it does
+echo "Creating secret in namespace $USERNAME-workspace"
+kubectl create secret docker-registry act3 --docker-server=reg.git.act3-ace.com --docker-username="$USERNAME" --password="$TOKEN" -n="$USERNAME-workspace"
 
 echo -e "\n${bold}Authenticated!${normal}"
