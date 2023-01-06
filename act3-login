@@ -236,7 +236,7 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 	"env": {},
 	"envFiles": {
 		"NETRC": "machine git.act3-ace.com login $USERNAME password $TOKEN",
-		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$("$USERNAME:$TOKEN" | base64)\"\n    }\n  }\n}",
+		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$(echo -n "$USERNAME:$TOKEN" | base64)\"\n    }\n  }\n}",
 		"ACE_DT_TELEMETRY_USERNAME": "$USERNAME"
 	},
 	"ips": {
@@ -323,6 +323,7 @@ echo "Merging with existing configuration. This does not overwrite your existing
 
 # TODO: check if your namespace exists and create secret if it does
 echo "Creating secret in namespace $USERNAME-workspace"
-kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace"
+output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace")
+echo "$output"
 
 echo -e "\n${bold}Authenticated!${normal}"
