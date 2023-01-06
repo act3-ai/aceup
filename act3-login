@@ -47,7 +47,6 @@ brew upgrade > "$LOG_FILE"
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
-# TODO: check if token is same, but power through for now
 echo -e "\n${bold}Create GitLab Personal Access Token${normal}"
 echo -e "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
 echo "2. Create a GitLab Personal Access Token with \"api\" scope"
@@ -59,18 +58,11 @@ echo ""
 # GITLAB CONTAINER REGISTRY CREDENTIALS
 echo -e "\n${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
 
-echo -e "Checking for dependencies:"
-
-echo -e "\tChecking for docker-credential-helper... "
-brew list docker-credential-helper > "$LOG_FILE" || { echo -e "\tInstalling docker-credential-helper"; brew install docker-credential-helper > "$LOG_FILE"; }
-
 # Use yq to add credsStore field to ~/.docker/config.json
-echo -e "\tChecking for yq... "
-brew list yq > "$LOG_FILE" || { echo -e "\tInstalling yq"; brew install yq > "$LOG_FILE"; }
-
 # Use crane to log in to reg.git.act3-ace.com (crane checks login)
-# using crane because it checks the login for success, otherwise we would just use the credential helper
-echo -e "\tChecking for crane... "
+echo -e "Checking for dependencies: docker-credential-helper, yq, crane"
+brew list docker-credential-helper > "$LOG_FILE" || { echo -e "\tInstalling docker-credential-helper"; brew install docker-credential-helper > "$LOG_FILE"; }
+brew list yq > "$LOG_FILE" || { echo -e "\tInstalling yq"; brew install yq > "$LOG_FILE"; }
 brew list crane > "$LOG_FILE" || { echo -e "\tInstalling crane"; brew install crane > "$LOG_FILE"; }
 
 CREDS_STORE="secretservice"
@@ -84,21 +76,6 @@ touch -a "$HOME/.docker/config.json" # -a tells touch to only change the "access
 "$BREW_BIN"/yq e -i -o=json ".credsStore = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
 "$BREW_BIN"/yq e -i -o=json ".credHelpers.\"reg.git.act3-ace.com\" = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
 
-# Podman Credential Helper Config
-# https://docs.podman.io/en/latest/markdown/podman-login.1.html
-
-# Default podman registries.conf path
-# XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-# PODMAN_CONFIG="$XDG_CONFIG_HOME/containers/registries.conf"
-# echo "credential-helpers="
-
-# Steps: registries.conf, credHelpers?, containers/auth.json, 
-# Process: create .docker/config.json, do what already doing, credsStore and add credHelper for reg.git.act3-ace.com
-# registries.conf has a line that is a credential helpers whitelist that needs updated? Maybe not true?
-# https://docs.docker.com/engine/reference/commandline/login/#credential-helpers
-# https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md#example
-# ^ if you wanna get clever, add the unqualified-search-registries for docker.io
-
 echo "Logging into the ACT3 GitLab Container Registry with crane (reg.git.act3-ace.com)"
 printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin > "$LOG_FILE"
 
@@ -106,7 +83,7 @@ printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$
 echo -e "\n${bold}Setting up git credentials for the ACT3 GitLab Instance${normal}"
 
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
-echo "Checking for git-credential-helper... "
+echo "Checking for dependencies: git-credential-helper"
 GIT_CREDENTIAL_HELPER="credential-libsecret"
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
 	brew list git-credential-libsecret > "$LOG_FILE" || { echo -e "\tInstalling git-credential-libsecret"; brew install git-credential-libsecret > "$LOG_FILE"; }
@@ -126,7 +103,7 @@ printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USE
 echo -e "\n${bold}NETRC Creation (for Golang development)${normal}"
 
 create_netrc () {
-echo "Checking for direnv... "
+echo "Checking for dependencies: direnv"
 brew list direnv > "$LOG_FILE" || { echo -e "\tInstalling direnv"; brew install direnv > "$LOG_FILE"; }
 
 mkdir -p "$XDG_CONFIG_HOME/direnv"
@@ -227,7 +204,6 @@ ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/$USERNAME.json"
 ln -s -f "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
 
 echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
-#TODO: echo -n if password doesn't work
 encoded=$(echo -n "$USERNAME:$TOKEN" | base64)
 cat <<EOF > "$ACE_HUB_USER_FILE"
 {
@@ -253,15 +229,10 @@ echo "Import this user configuration file in ACE Hub to use your credentials. Th
 echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
 
 # Dependencies: kubectl and krew
-echo -e "Checking for dependencies:"
-
-echo -e "\tChecking for kubectl... "
+echo -e "Checking for dependencies: kubectl, krew, konfig"
 brew list kubernetes-cli > "$LOG_FILE" || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli > "$LOG_FILE"; }
-
-echo -e "\tChecking for krew... "
 brew list krew > "$LOG_FILE" || { echo -e "\tInstalling krew"; brew install krew > "$LOG_FILE"; }
-
-echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl krew install konfig > "$LOG_FILE"
+command -v kubectl-konfig >/dev/null 2>&1 || { echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl krew install konfig > "$LOG_FILE"; }
 
 # curl the file from wherever it ends up 
 CLUSTERCONFIG="$HOME/.kube/act3.yaml"
@@ -314,12 +285,9 @@ contexts:
 current-context: lion
 EOF
 
-# mv "$HOME/.kube/config" "$HOME/.kube/config.bak"
-# kubectl konfig merge "$HOME/.kube/config.bak" "$HOME/.kube/act3.yaml" > "$HOME/.kube/config"
-echo "Merging with existing configuration. This does not overwrite your existing configuration, delete file \"$HOME/.kube/config\" and run \"kubectl konfig import --save $CLUSTERCONFIG\" to overwrite existing cluster configuration."
+echo "Merging with existing configuration. This does not overwrite your existing configuration, delete file \"$HOME/.kube/config\" and run \"kubectl konfig import -s $CLUSTERCONFIG\" to overwrite existing cluster configuration."
 "$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
 
-# TODO: check if your namespace exists and create secret if it does
 echo "Creating secret in namespace $USERNAME-workspace"
 kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" || echo "Could not create secret, you may have to request to be added to \"ace-project\""
 
