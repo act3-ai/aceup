@@ -21,8 +21,7 @@ echo '
 /_/    \_\_____|  |_|  |____/  |_____|______|\_____|_____|_| \_|
 '
 
-recycle='\U267B'
-echo -e "${recycle} ${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
+echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
 # Default XDG directories used in the script
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
@@ -49,8 +48,7 @@ brew upgrade > "$LOG_FILE"
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
 # TODO: check if token is same, but power through for now
-key='\U1F511'
-echo -e "\n${key} ${bold}Create GitLab Personal Access Token${normal}"
+echo -e "\n${bold}Create GitLab Personal Access Token${normal}"
 echo -e "1. Navigate to \U1F517 ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
 echo "2. Create a GitLab Personal Access Token with \"api\" scope"
 echo "3. Enter your username and token:"
@@ -106,7 +104,7 @@ echo "Logging into the ACT3 GitLab Container Registry with crane (reg.git.act3-a
 printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin > "$LOG_FILE"
 
 # GIT CREDENTIAL STORAGE SETUP
-echo -e "\n\U1F510 ${bold}Setting up git credentials for the ACT3 GitLab Instance${normal}"
+echo -e "\n${bold}Setting up git credentials for the ACT3 GitLab Instance${normal}"
 
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
 echo "Checking for git-credential-helper... "
@@ -126,7 +124,7 @@ echo "Storing credentials for git (git.act3-ace.com)"
 printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git "credential-$GIT_CREDENTIAL_HELPER" store > "$LOG_FILE"
 
 # ACE TOOLS HOMEBREW TAP
-echo -e "\n\U2699 ${bold}NETRC Creation (for Golang development)${normal}"
+echo -e "\n${bold}NETRC Creation (for Golang development)${normal}"
 
 create_netrc () {
 echo "Checking for direnv... "
@@ -154,7 +152,7 @@ case $yn in
 esac
 
 # ACE TOOLS HOMEBREW TAP
-echo -e "\n\U1F37B ${bold}Setting up the ACE Tools Homebrew Tap${normal}"
+echo -e "\n${bold}Setting up the ACE Tools Homebrew Tap${normal}"
 
 # Tap act3/ace-tools if not already tapped
 echo "Checking for the act3/ace-tools Homebrew Tap... "
@@ -166,7 +164,7 @@ brew update > "$LOG_FILE"
 brew upgrade > "$LOG_FILE"
 
 # GITLAB API CREDENTIALS FOR PROJECT TOOL
-echo -e "\n\U1F9DE ${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
+echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
 
 # Install act3-pt and log in to git.act3-ace.com
 echo "Checking for act3-pt... "
@@ -175,8 +173,50 @@ brew list act3-pt > "$LOG_FILE" || { echo -e "\tInstalling act3-pt"; brew instal
 echo "Logging in with act3-pt"
 printf '%s\n' "$TOKEN" | "$BREW_BIN"/act3-pt login --name act3 --url git.act3-ace.com --token-stdin > "$LOG_FILE"
 
+# TELEMETRY SERVER SETUP FOR ACE-DT
+echo -e "\n${bold}Setting up Telemetry Server for ACE Data Tool (ace-dt)${normal}"
+
+echo "Checking for ace-dt config file..."
+ACE_DT_CONFIG="${ACE_DT_CONFIG:-$XDG_CONFIG_HOME/ace/dt/config.yaml}"
+mkdir -p "$(dirname "$ACE_DT_CONFIG")"
+touch -a "$ACE_DT_CONFIG"
+if [ -s "$ACE_DT_CONFIG" ]; then
+	echo "Leaving existing ace-dt configuration file unchanged"
+else 
+	echo "Writing ace-dt configuration file with telemetry server configuration"
+	cat <<EOF > "$ACE_DT_CONFIG"
+# ACE Data Tool Configuration
+apiVersion: config.dt.act3-ace.io/v1alpha1
+kind: Configuration
+
+# CachePruneMax is the maximum cache size after pruning
+# cachePruneMax: 500Mi
+
+# CachePath is the directory where the cache fields are stored
+# cachePath:
+
+# CompressionLevel is the level used for compression.  Valid values are min, normal, max
+# compressionLevel: normal
+
+# ChunkSize is the maximum size of a chunk used to upload blobs. 0 disables chunking
+# chunkSize: 100Mi
+
+# ConcurrentHTTP is the maximum number of HTTP requests that will be in flight at any given time. Must be positive.
+# concurrentHTTP: 25
+
+# RegistryAuthFile is the file to use for credentials to an OCI registry.  Defaults to ~/.docker/config.json
+# registryAuthFile: ~/.docker/config.json
+
+# Telemetry configuration
+telemetry:
+- name: lion
+   url: https://telemetry.lion.act3-ace.ai
+telemetryUserName: $USERNAME
+EOF
+fi
+
 # ACE HUB USER CONFIGURATION
-echo -e "\n\U1F52C ${bold}Creating ACE Hub User Configuration file${normal}"
+echo -e "\n${bold}Creating ACE Hub User Configuration file${normal}"
 
 ACE_HUB_USER_FILE="$XDG_RUNTIME_DIR/ace/hub/$USERNAME.json"
 
@@ -189,13 +229,15 @@ ln -s -f "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
 
 echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
 # "GIT_PASSWORD": "$USERNAME:$TOKEN"
+# TODO: message saying it was generated
+# TODO: add newlines to NETRC
 cat <<EOF > "$ACE_HUB_USER_FILE"
 {
 	"env": {},
 	"envFiles": {
 		"NETRC": "machine git.act3-ace.com login $USERNAME password $TOKEN",
-		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"username:password | base64\"\n    }\n  }\n}",
-		"ACE_DT_CONFIG": "# ACE Data Tool Configuration\napiVersion: config.dt.act3-ace.io/v1alpha1\nkind: Configuration\n\n# cachePruneMax: 500Mi\n# cachePath:\n# chunkSize: 100Mi\n# concurrentHTTP: 25\nregistryAuthFile: /ace/hub/envfile/REGISTRY_AUTH_FILE\n\n# Telemetry configuration\ntelemetry:\n - name: lion\n   url: https://telemetry.lion.act3-ace.ai\ntelemetryUserName: $USERNAME",
+		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$USERNAME:$TOKEN | base64\"\n    }\n  }\n}",
+		"ACE_DT_CONFIG": "# ACE Data Tool Configuration\napiVersion: config.dt.act3-ace.io/v1alpha1\nkind: Configuration\n\n# cachePruneMax: 500Mi\n# cachePath:\n# chunkSize: 100Mi\n# concurrentHTTP: 25\nregistryAuthFile: /ace/hub/envfile/REGISTRY_AUTH_FILE\n\n# Telemetry configuration\ntelemetry:\n - name: lion\n   url: https://telemetry.lion.act3-ace.ai\ntelemetryUserName: $USERNAME"
 	},
 	"ips": {
 		"act3": {
@@ -207,6 +249,40 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 	"userLaunchTemplates": {}
 }
 EOF
-echo "Import this user configuration file in ACE Hub to use your credentials"
+echo "Import this user configuration file in ACE Hub to use your credentials. This user configuration file will be destroyed on next reboot."
 
+# CLUSTER ACCESS CONFIGURATION
+echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
 
+# kube stuff
+# 1. make .kube folder
+# 2. make the file "~/.kube/act3.yml"
+#    - 0700 perm, only you can read/write
+# 3. Merge with kubectl command and redirect output to "~/.kube/config"
+
+# Dependencies: kubectl and krew
+echo -e "Checking for dependencies:"
+
+echo -e "\tChecking for kubectl... "
+brew list kubernetes-cli > "$LOG_FILE" || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli > "$LOG_FILE"; }
+
+echo -e "\tChecking for krew... "
+brew list krew > "$LOG_FILE" || { echo -e "\tInstalling krew"; brew install krew > "$LOG_FILE"; }
+
+echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl krew install konfig > "$LOG_FILE"
+
+# curl the file from wherever it ends up 
+CLUSTERCONFIG="$HOME/.kube/act3.yaml"
+echo -e "Creating cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
+mkdir -p "$HOME/.kube"
+touch -a "$CLUSTERCONFIG"
+chmod 600 "$CLUSTERCONFIG"
+curl --header "PRIVATE-TOKEN: $TOKEN" "https://git.act3-ace.com/api/v4/projects/932/repository/files/kubeconfig.yml?ref=master" > "$CLUSTERCONFIG"
+# mv "$HOME/.kube/config" "$HOME/.kube/config.bak"
+# kubectl konfig merge "$HOME/.kube/config.bak" "$HOME/.kube/act3.yaml" > "$HOME/.kube/config"
+echo -e "Merging with existing configuration. This does not overwrite your existing configuration, delete file \"$HOME/.kube/config\" and run \"kubectl konfig import --save $CLUSTERCONFIG\" to overwrite existing cluster configuration."
+"$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
+
+# TODO: check if your namespace exists and create secret if it does
+
+echo -e "\n${bold}Authenticated!${normal}"
