@@ -289,7 +289,13 @@ echo "Merging with existing configuration. This does not overwrite your existing
 "$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
 
 echo "Creating secret in namespace $USERNAME-workspace"
-kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" || echo "Could not create secret, you may have to request to be added to \"ace-project\""
-
+output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace") 
+if [[ "$output" == *"already exists"* ]]; then
+  echo "Could not create secret, secret already exists"
+elif [[ "$output" == *"error"* ]]; then
+  echo "Could not create secret, you may have to request to be added to \"ace-project\""
+else
+  echo "$output"
+fi
 
 echo -e "\n${bold}Authenticated!${normal}"
