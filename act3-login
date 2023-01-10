@@ -80,16 +80,16 @@ touch -a "$HOME/.docker/config.json" # -a tells touch to only change the "access
 "$BREW_BIN"/yq e -i -o=json ".credsStore = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
 "$BREW_BIN"/yq e -i -o=json ".credHelpers.\"reg.git.act3-ace.com\" = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
 
-echo "Logging into the ACT3 GitLab Container Registry with crane (reg.git.act3-ace.com)"
+echo "Logging into the ACT3 GitLab Container Registry with Crane (reg.git.act3-ace.com)"
 printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin > "$LOG_FILE"
 
 # GIT CREDENTIAL STORAGE SETUP
-echo -e "\n${bold}Setting up git credentials for the ACT3 GitLab Instance${normal}"
+echo -e "\n${bold}Setting up Git credentials for the ACT3 GitLab instance${normal}"
 
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
-echo "Checking for dependencies: git-credential-helper"
-GIT_CREDENTIAL_HELPER="credential-libsecret"
+GIT_CREDENTIAL_HELPER="libsecret"
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
+  echo "Checking for dependencies: git-credential-libsecret"
 	brew list git-credential-libsecret > "$LOG_FILE" || { echo -e "\tInstalling git-credential-libsecret"; brew install git-credential-libsecret > "$LOG_FILE"; }
 	GIT_CREDENTIAL_HELPER="libsecret"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -97,10 +97,10 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 	GIT_CREDENTIAL_HELPER="osxkeychain"
 fi
 
-echo "Configuring git to use credential helper \"$GIT_CREDENTIAL_HELPER\""
+echo "Configuring Git to use credential helper \"$GIT_CREDENTIAL_HELPER\""
 git config --global credential.helper "$GIT_CREDENTIAL_HELPER" > "$LOG_FILE"
 
-echo "Storing credentials for git (git.act3-ace.com)"
+echo "Storing credentials for the ACT3 GitLab Instance (git.act3-ace.com)"
 printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git "credential-$GIT_CREDENTIAL_HELPER" store > "$LOG_FILE"
 
 # ACE TOOLS HOMEBREW TAP
