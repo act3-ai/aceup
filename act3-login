@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#TODO: add DoD certificate installation
+
 # Have command error out on any command failure
 set -e
 
@@ -11,6 +13,8 @@ BREW_BIN=$(brew --prefix)/bin
 
 bold=$(tput bold)
 normal=$(tput sgr0)
+yellow=$(tput setaf 3)
+no_color=$(tput setaf 1)
 
 echo '
           _____ _______ ____    _      ____   _____ _____ _   _ 
@@ -41,9 +45,9 @@ echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" > "$LOG_FILE"
 # Update in case yq/jq/crane/docker-credential-helper are out of date
 echo -e "\nUpdating Homebrew Formula dependencies..."
 echo "Running brew update..."
-brew update > "$LOG_FILE" || echo "Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation"
+brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 echo "Running brew upgrade..."
-brew upgrade > "$LOG_FILE" || echo "Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation"
+brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
@@ -136,8 +140,8 @@ echo "Checking for the act3/ace-tools Homebrew Tap... "
 echo -e "act3/ace-tools tap added, check available formulas with \"brew tap-info act3/ace-tools --json | jq .[0].formula_names\""
 
 echo "Upgrading Homebrew Formulae"
-brew update > "$LOG_FILE"
-brew upgrade > "$LOG_FILE"
+brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
+brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 
 # GITLAB API CREDENTIALS FOR PROJECT TOOL
 echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
