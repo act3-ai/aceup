@@ -50,7 +50,7 @@ brew upgrade > "$LOG_FILE" || echo "Error: brew upgrade failed, you may want to 
 echo -e "\n${bold}Create GitLab Personal Access Token${normal}"
 echo -e "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
 echo "2. Create a GitLab Personal Access Token with \"api\" scope"
-echo "3. Enter your username and token:"
+echo "3. Enter your GitLab Username and Personal Access Token:"
 read -r -p "       Enter Username>" USERNAME
 read -s -r -p "       Enter Token>" TOKEN
 echo ""
