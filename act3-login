@@ -41,9 +41,9 @@ echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" > "$LOG_FILE"
 # Update in case yq/jq/crane/docker-credential-helper are out of date
 echo -e "\nUpdating Homebrew Formula dependencies..."
 echo "Running brew update..."
-brew update > "$LOG_FILE"
+brew update > "$LOG_FILE" || echo "Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation"
 echo "Running brew upgrade..."
-brew upgrade > "$LOG_FILE"
+brew upgrade > "$LOG_FILE" || echo "Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation"
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
