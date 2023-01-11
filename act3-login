@@ -291,7 +291,7 @@ contexts:
 current-context: lion
 EOF
 
-echo "Merging with existing cluster configuration."
+echo "Merging with existing cluster configuration"
 KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$BREW_BIN"/kubectl config view > ~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
 
 echo "Creating secret in namespace $USERNAME-workspace"
