@@ -232,7 +232,7 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 	"userLaunchTemplates": {}
 }
 EOF
-echo "Import this user configuration file in ACE Hub to use your credentials. This user configuration file will be destroyed on next reboot."
+echo "${yellow}You must import this user configuration file to ACE Hub to use your credentials. The file will be destroyed on next reboot.${no_color}"
 
 # CLUSTER ACCESS CONFIGURATION
 echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
