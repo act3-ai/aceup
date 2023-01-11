@@ -105,7 +105,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
   echo "Storing credentials for the ACT3 GitLab Instance (git.act3-ace.com)"
   printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git credential-osxkeychain store > "$LOG_FILE"
 
-  [[ $(command -v git) == "/usr/bin/git" ]] || echo "${yellow}WARNING: Your system is using a non-standard installation of git. Use \"/usr/bin/git\" to take advantage of macOS keychain secure credential storage.${no_color}"
+  [[ $(command -v git) == "/usr/bin/git" ]] || echo "${yellow}WARNING: Your system is using a non-standard installation of git. Use \"/usr/bin/git\" to take advantage of macOS keychain secure credential storage. If you have installed git via Homebrew, run \"brew uninstall git\"${no_color}"
 fi
 
 # ACE TOOLS HOMEBREW TAP
