@@ -239,6 +239,8 @@ echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
 
 echo -e "Checking for dependencies: kubectl"
 brew list kubernetes-cli > "$LOG_FILE" || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli > "$LOG_FILE"; }
+# brew list krew > "$LOG_FILE" || { echo -e "\tInstalling krew"; brew install krew > "$LOG_FILE"; }
+# command -v kubectl-konfig >/dev/null 2>&1 || { echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl-krew install konfig > "$LOG_FILE"; }
 
 # curl the file from wherever it ends up 
 CLUSTERCONFIG="$HOME/.kube/act3.yaml"
@@ -291,8 +293,11 @@ contexts:
 current-context: lion
 EOF
 
-echo "Merging with existing cluster configuration"
-KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$BREW_BIN"/kubectl config view > ~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
+echo "Backing up existing configuration to \"$HOME/.kube/config.bak\""
+[ -f "$HOME/.kube/config" ] && cp "$HOME/.kube/config" "$HOME/.kube/config.bak"
+echo "Merging cluster configuration into \"$HOME/.kube/config\"."
+# "$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
+KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$BREW_BIN"/kubectl config view --raw > ~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
 
 echo "Creating secret in namespace $USERNAME-workspace"
 output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" --context lion)
