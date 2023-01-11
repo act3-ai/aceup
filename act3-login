@@ -195,7 +195,7 @@ kind: Configuration
 # Telemetry configuration
 telemetry:
 - name: lion
-   url: https://telemetry.lion.act3-ace.ai
+  url: https://telemetry.lion.act3-ace.ai
 telemetryUserName: $USERNAME
 EOF
 fi
