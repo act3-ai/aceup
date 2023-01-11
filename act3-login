@@ -47,7 +47,8 @@ echo -e "\nUpdating Homebrew Formula dependencies..."
 echo "Running brew update..."
 brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 echo "Running brew upgrade..."
-brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
+all_dependencies="docker-credential-helper yq crane git-credential-libsecret direnv act3-pt kubectl"
+brew upgrade "$all_dependencies" > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
@@ -87,21 +88,25 @@ printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$
 echo -e "\n${bold}Setting up Git credentials for the ACT3 GitLab instance${normal}"
 
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
-GIT_CREDENTIAL_HELPER="libsecret"
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
   echo "Checking for dependencies: git-credential-libsecret"
 	brew list git-credential-libsecret > "$LOG_FILE" || { echo -e "\tInstalling git-credential-libsecret"; brew install git-credential-libsecret > "$LOG_FILE"; }
-	GIT_CREDENTIAL_HELPER="libsecret"
+
+  echo "Configuring Git to use credential helper \"libsecret\""
+  git config --global credential.helper "libsecret" > "$LOG_FILE"
+
+  echo "Storing credentials for the ACT3 GitLab Instance (git.act3-ace.com)"
+  printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | "$BREW_BIN"/git-credential-libsecret store > "$LOG_FILE"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
 	# I think MacOS comes with this pre-installed or it's part of git?
-	GIT_CREDENTIAL_HELPER="osxkeychain"
+  echo "Configuring Git to use credential helper \"osxkeychain\""
+  git config --global credential.helper "osxkeychain" > "$LOG_FILE"
+
+  echo "Storing credentials for the ACT3 GitLab Instance (git.act3-ace.com)"
+  printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git credential-osxkeychain store > "$LOG_FILE"
+
+  [[ $(command -v git) == "/usr/bin/git" ]] || echo "${yellow}WARNING: Your system is using a non-standard installation of git. Use \"/usr/bin/git\" to take advantage of macOS keychain secure credential storage.${no_color}"
 fi
-
-echo "Configuring Git to use credential helper \"$GIT_CREDENTIAL_HELPER\""
-git config --global credential.helper "$GIT_CREDENTIAL_HELPER" > "$LOG_FILE"
-
-echo "Storing credentials for the ACT3 GitLab Instance (git.act3-ace.com)"
-printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git "credential-$GIT_CREDENTIAL_HELPER" store > "$LOG_FILE"
 
 # ACE TOOLS HOMEBREW TAP
 echo -e "\n${bold}NETRC Creation (for Golang development)${normal}"
@@ -118,7 +123,7 @@ echo "
 cat <<EOF > \$NETRC
 machine git.act3-ace.com
 	login $USERNAME
-	password $(secret-tool lookup server git.act3-ace.com)
+	password \$(secret-tool lookup server git.act3-ace.com)
 EOF
 " > "$XDG_CONFIG_HOME/direnv/direnvrc"
 
@@ -141,7 +146,7 @@ echo -e "act3/ace-tools tap added, check available formulas with \"brew tap-info
 
 echo "Upgrading Homebrew Formulae"
 brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
-brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
+brew upgrade "$all_dependencies" > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 
 # GITLAB API CREDENTIALS FOR PROJECT TOOL
 echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
@@ -198,13 +203,13 @@ fi
 # ACE HUB USER CONFIGURATION
 echo -e "\n${bold}Creating ACE Hub User Configuration file${normal}"
 
-ACE_HUB_USER_FILE="$XDG_RUNTIME_DIR/ace/hub/$USERNAME.json"
+ACE_HUB_USER_FILE="$XDG_RUNTIME_DIR/ace/hub/act3.json"
 
 mkdir -p "$XDG_RUNTIME_DIR/ace/hub"
 touch -a "$ACE_HUB_USER_FILE"
 
 mkdir -p "$XDG_CONFIG_HOME/ace/hub"
-ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/$USERNAME.json"
+ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/act3.json"
 ln -s -f "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
 
 echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
@@ -232,11 +237,8 @@ echo "Import this user configuration file in ACE Hub to use your credentials. Th
 # CLUSTER ACCESS CONFIGURATION
 echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
 
-# Dependencies: kubectl and krew
-echo -e "Checking for dependencies: kubectl, krew, konfig"
+echo -e "Checking for dependencies: kubectl"
 brew list kubernetes-cli > "$LOG_FILE" || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli > "$LOG_FILE"; }
-brew list krew > "$LOG_FILE" || { echo -e "\tInstalling krew"; brew install krew > "$LOG_FILE"; }
-command -v kubectl-konfig >/dev/null 2>&1 || { echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl-krew install konfig > "$LOG_FILE"; }
 
 # curl the file from wherever it ends up 
 CLUSTERCONFIG="$HOME/.kube/act3.yaml"
@@ -289,17 +291,16 @@ contexts:
 current-context: lion
 EOF
 
-echo "Merging with existing configuration. This does not overwrite your existing configuration, delete file \"$HOME/.kube/config\" and run \"kubectl konfig import -s $CLUSTERCONFIG\" to overwrite existing cluster configuration."
-"$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
+echo "Merging with existing cluster configuration."
+KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$BREW_BIN"/kubectl config view > ~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
 
 echo "Creating secret in namespace $USERNAME-workspace"
 output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace") 
+echo "$output"
 if [[ "$output" == *"already exists"* ]]; then
-  echo "Could not create secret, secret already exists"
+  echo "Secret already exists"
 elif [[ "$output" == *"error"* ]]; then
-  echo "Could not create secret, you may have to request to be added to \"ace-project\""
-else
-  echo "$output"
+  echo "${yellow}WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${no_color}"
 fi
 
 echo -e "\n${bold}Authenticated!${normal}"
