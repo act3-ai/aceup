@@ -17,12 +17,12 @@ yellow=$(tput setaf 3)
 no_color=$(tput setaf 1)
 
 echo '
-          _____ _______ ____    _      ____   _____ _____ _   _ 
-    /\   / ____|__   __|___ \  | |    / __ \ / ____|_   _| \ | |
-   /  \ | |       | |    __) | | |   | |__| | |  __  | | |  \| |
-  / /\ \| |       | |   |__ <  | |   |      | | |_ | | | | . ` |
- / ____ \ |____   | |   ___) | | |___|      | |__| |_| |_| |\  |
-/_/    \_\_____|  |_|  |____/  |_____|______|\_____|_____|_| \_|
+          _____ _______ ____      _      ____   _____ _____ _   _ 
+    /\   / ____|__   __|___ \    | |    / __ \ / ____|_   _| \ | |
+   /  \ | |       | |    __) |   | |   | |__| | |  __  | | |  \| |
+  / /\ \| |       | |   |__ <    | |   |      | | |_ | | | | . ` |
+ / ____ \ |____   | |   ___) |   | |___|  ||  | |__| |_| |_| |\  |
+/_/    \_\_____|  |_|  |____/    |_____|______|\_____|_____|_| \_|
 '
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
@@ -309,4 +309,4 @@ elif [[ "$output" == *"error"* ]]; then
   echo "${yellow}WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${no_color}"
 fi
 
-echo -e "\n${bold}Authenticated!${normal}"
+echo -e "\n${bold}Success!${normal}"
