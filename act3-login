@@ -127,7 +127,7 @@ machine git.act3-ace.com
 EOF
 " > "$XDG_CONFIG_HOME/direnv/direnvrc"
 
-echo "Configured NETRC to use secure credential storage."
+echo "Configured NETRC to use secure credential storage. (\"$XDG_CONFIG_HOME/direnv/direnvrc\")"
 }
 
 read -r -p "Do you wish to set up a .netrc file? (y/n)>" yn
