@@ -295,7 +295,7 @@ echo "Merging with existing cluster configuration"
 KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$BREW_BIN"/kubectl config view > ~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
 
 echo "Creating secret in namespace $USERNAME-workspace"
-output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace") 
+output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" --context lion)
 echo "$output"
 if [[ "$output" == *"already exists"* ]]; then
   echo "Secret already exists"
