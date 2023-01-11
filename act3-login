@@ -47,8 +47,8 @@ echo -e "\nUpdating Homebrew Formula dependencies..."
 echo "Running brew update..."
 brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 echo "Running brew upgrade..."
-all_dependencies="docker-credential-helper yq crane git-credential-libsecret direnv act3-pt kubectl"
-"brew upgrade $all_dependencies" > "$LOG_FILE"
+# all_dependencies="docker-credential-helper yq crane git-credential-libsecret direnv act3-pt kubectl"
+brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
@@ -146,7 +146,7 @@ echo -e "act3/ace-tools tap added, check available formulas with \"brew tap-info
 
 echo "Upgrading Homebrew Formulae"
 brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
-"brew upgrade $all_dependencies" > "$LOG_FILE"
+brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
 
 # GITLAB API CREDENTIALS FOR PROJECT TOOL
 echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
