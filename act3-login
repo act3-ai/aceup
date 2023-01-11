@@ -295,7 +295,7 @@ current-context: lion
 EOF
 
 echo "Backing up existing configuration to \"$HOME/.kube/config.bak\""
-[ -f "$HOME/.kube/config" ] && cp "$HOME/.kube/config" "$HOME/.kube/config.bak"
+[ -f "$HOME/.kube/config" ] && cp "$HOME/.kube/config" "$HOME/.kube/config.bak-$(date +%s)"
 echo "Merging cluster configuration into \"$HOME/.kube/config\"."
 # "$BREW_BIN"/kubectl konfig import --save "$CLUSTERCONFIG"
 KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$BREW_BIN"/kubectl config view --raw > ~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
