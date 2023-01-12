@@ -5,20 +5,6 @@
 # Have command error out on any command failure
 set -e
 
-command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
-
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-  if dpkg -s dev-tools; then
-    echo "Detected an installation of the deprecated ACT3 dev-tools package. This will cause conflicts with installations of Homebrew ACE Tools."
-    echo "Run \"apt remove dev-tools\""
-  fi
-fi
-
-
-# Set no auto update for this script
-export HOMEBREW_NO_AUTO_UPDATE=1
-BREW_BIN=$(brew --prefix)/bin
-
 bold=$(tput bold)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
@@ -34,15 +20,36 @@ echo '
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
+command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
+
 # Default XDG directories used in the script
-XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+  if dpkg -s dev-tools; then
+    echo "Detected an installation of the deprecated ACT3 dev-tools package. This will cause conflicts with installations of Homebrew ACE Tools."
+    echo "Run \"apt remove dev-tools\""
+  fi
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/Library/Caches}"
+  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$HOME/Library/Application Support}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/Library/Application Support}"
+else
+  echo "${yellow}WARNING: Unsupported OS${normal}"
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+fi
+
+# Set no auto update for this script
+export HOMEBREW_NO_AUTO_UPDATE=1
+BREW_BIN=$(brew --prefix)/bin
 
 # Create log file
 timestamp=$(date "+%Y-%m-%d_%H-%M-%S")
-LOG_FILE="$XDG_CACHE_HOME/act3-auth-refresh/logs_$timestamp"
-mkdir -p "$XDG_CACHE_HOME/act3-auth-refresh" && touch "$LOG_FILE"
+LOG_FILE="$XDG_CACHE_HOME/act3/login/logs_$timestamp"
+mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$LOG_FILE"
 echo -e "\nLogs: $LOG_FILE"
 
 echo "XDG_CACHE_HOME=$XDG_CACHE_HOME" > "$LOG_FILE"
