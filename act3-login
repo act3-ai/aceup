@@ -156,7 +156,7 @@ echo -e "\n${bold}Setting up the ACE Tools Homebrew Tap${normal}"
 # Tap act3/ace-tools if not already tapped
 echo "Checking for the act3/ace-tools Homebrew Tap... "
 [[ $(brew tap) =~ "act3/ace-tools" ]] || { echo -e "Adding the act3/ace-tools Homebrew Tap"; brew tap act3/ace-tools https://git.act3-ace.com/ace/homebrew-ace-tools.git > "$LOG_FILE"; }
-echo -e "act3/ace-tools tap added, check available formulas with \"brew tap-info act3/ace-tools --json | jq .[0].formula_names\""
+echo -e "act3/ace-tools tap added, check available formulas with \"brew search act3/ace-tools\""
 
 echo "Upgrading Homebrew Formulae"
 brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
