@@ -249,6 +249,7 @@ echo -e "Creating cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
 
 # Make sure file exists
 mkdir -p "$HOME/.kube"
+chmod 700 "$HOME/.kube" # permissions for only user read/write
 touch -a "$CLUSTERCONFIG"
 chmod 600 "$CLUSTERCONFIG" # permissions for only user read/write
 
