@@ -14,14 +14,13 @@ BREW_BIN=$(brew --prefix)/bin
 bold=$(tput bold)
 normal=$(tput sgr0)
 yellow=$(tput setaf 3)
-no_color=$(tput setaf 1)
 
 echo '
           _____ _______ ____      _      ____   _____ _____ _   _ 
     /\   / ____|__   __|___ \    | |    / __ \ / ____|_   _| \ | |
-   /  \ | |       | |    __) |   | |   | |__| | |  __  | | |  \| |
-  / /\ \| |       | |   |__ <    | |   |      | | |_ | | | | . ` |
- / ____ \ |____   | |   ___) |   | |___|  ||  | |__| |_| |_| |\  |
+   /  \ | |       | |    __) |   | |   |_|  | | |  __  | | |  \| |
+  / /\ \| |       | |   |__ <    | |   _____|_| | |_ | | | | . ` |
+ / ____ \ |____   | |   ___) |   | |___|______| |__| |_| |_| |\  |
 /_/    \_\_____|  |_|  |____/    |_____|______|\_____|_____|_| \_|
 '
 
@@ -45,10 +44,10 @@ echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" > "$LOG_FILE"
 # Update in case yq/jq/crane/docker-credential-helper are out of date
 echo -e "\nUpdating Homebrew Formula dependencies..."
 echo "Running brew update..."
-brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
+brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
 echo "Running brew upgrade..."
 # all_dependencies="docker-credential-helper yq crane git-credential-libsecret direnv act3-pt kubectl"
-brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
+brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
@@ -105,7 +104,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
   echo "Storing credentials for the ACT3 GitLab Instance (git.act3-ace.com)"
   printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git credential-osxkeychain store > "$LOG_FILE"
 
-  [[ $(command -v git) == "/usr/bin/git" ]] || echo "${yellow}WARNING: Your system is using a non-standard installation of git. Use \"/usr/bin/git\" to take advantage of macOS keychain secure credential storage. If you have installed git via Homebrew, run \"brew uninstall git\"${no_color}"
+  [[ $(command -v git) == "/usr/bin/git" ]] || echo "${yellow}WARNING: Your system is using a non-standard installation of git. Use \"/usr/bin/git\" to take advantage of macOS keychain secure credential storage. If you have installed git via Homebrew, run \"brew uninstall git\"${normal}"
 fi
 
 # ACE TOOLS HOMEBREW TAP
@@ -145,8 +144,8 @@ echo "Checking for the act3/ace-tools Homebrew Tap... "
 echo -e "act3/ace-tools tap added, check available formulas with \"brew tap-info act3/ace-tools --json | jq .[0].formula_names\""
 
 echo "Upgrading Homebrew Formulae"
-brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
-brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${no_color}"
+brew update > "$LOG_FILE" || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
+brew upgrade > "$LOG_FILE" || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
 
 # GITLAB API CREDENTIALS FOR PROJECT TOOL
 echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
@@ -232,7 +231,7 @@ cat <<EOF > "$ACE_HUB_USER_FILE"
 	"userLaunchTemplates": {}
 }
 EOF
-echo "${yellow}You must import this user configuration file to ACE Hub to use your credentials. The file will be destroyed on next reboot.${no_color}"
+echo "${yellow}You must import this user configuration file to ACE Hub to use your credentials. The file will be destroyed on next reboot.${normal}"
 
 # CLUSTER ACCESS CONFIGURATION
 echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
@@ -251,7 +250,8 @@ echo -e "Creating cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
 mkdir -p "$HOME/.kube"
 chmod 700 "$HOME/.kube" # permissions for only user read/write
 touch -a "$CLUSTERCONFIG"
-chmod 600 "$CLUSTERCONFIG" # permissions for only user read/write
+chmod 700 "$CLUSTERCONFIG" # permissions for only user read/write
+[ -f "$HOME/.kube/config" ] && chmod 700 "$HOME/.kube/config"
 
 # Write to it
 cat <<EOF > "$CLUSTERCONFIG"
@@ -307,7 +307,7 @@ echo "$output"
 if [[ "$output" == *"already exists"* ]]; then
   echo "Secret already exists"
 elif [[ "$output" == *"error"* ]]; then
-  echo "${yellow}WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${no_color}"
+  echo "${yellow}WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${normal}"
 fi
 
 echo -e "\n${bold}Success!${normal}"
