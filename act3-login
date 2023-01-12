@@ -7,6 +7,14 @@ set -e
 
 command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
 
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+  if dpkg -s dev-tools; then
+    echo "Detected an installation of the deprecated ACT3 dev-tools package. This will cause conflicts with installations of Homebrew ACE Tools."
+    echo "Run \"apt remove dev-tools\""
+  fi
+fi
+
+
 # Set no auto update for this script
 export HOMEBREW_NO_AUTO_UPDATE=1
 BREW_BIN=$(brew --prefix)/bin
