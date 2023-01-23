@@ -20,16 +20,8 @@ echo '
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
-command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
-
-brew doctor > "$LOG_FILE" 2>&1 || { echo -e "${yellow}WARNING: Detected issues with your Homebrew installation that could cause ACT3 Login to fail. Run \"brew doctor\" to check your system for potential problems."; }
-
 # Default XDG directories used in the script
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-  if dpkg -s dev-tools; then
-    echo "Detected an installation of the deprecated ACT3 dev-tools package. This will cause conflicts with installations of Homebrew ACE Tools."
-    echo "Run \"apt remove dev-tools\""
-  fi
   XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
   XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
   XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -58,6 +50,15 @@ echo -e "\nLogs: $LOG_FILE"
 echo "XDG_CACHE_HOME=$XDG_CACHE_HOME" > "$LOG_FILE"
 echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" > "$LOG_FILE"
 echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" > "$LOG_FILE"
+
+command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
+
+brew doctor > "$LOG_FILE" 2>&1 || { echo -e "${yellow}WARNING: Detected issues with your Homebrew installation that could cause ACT3 Login to fail. Run \"brew doctor\" to check your system for potential problems.${normal}"; }
+
+if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools > "$LOG_FILE" 2>&1; then
+  echo "Detected an installation of the deprecated ACT3 dev-tools package. This will cause conflicts with installations of Homebrew ACE Tools."
+  echo "Run \"apt remove dev-tools\""
+fi
 
 # Update in case yq/jq/crane/docker-credential-helper are out of date
 echo -e "\nUpdating Homebrew Formula dependencies..."

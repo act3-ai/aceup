@@ -32,6 +32,10 @@ The ACT3 Login script automatically logs a user into the standard ACT3 services.
 
 ### Troubleshooting
 
+> My previous token is still stored when I check the keyring.
+
+Try relaunching the keyring GUI, it might not have updated yet.
+
 > I am getting this error during Git credential setup: `git: 'credential-osxkeychain' is not a git command. See 'git --help'.`
 
 You may be using an alternate installation of Git.
