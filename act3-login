@@ -26,9 +26,9 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
   XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
   XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/Library/Caches}"
-  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$HOME/Library/Application\ Support}"
-  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/Library/Application\ Support}"
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
+  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-"$HOME/Library/Application\ Support"}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-"$HOME/Library/Application\ Support"}"
 else
   echo "${yellow}WARNING: Unsupported OS${normal}"
   XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
@@ -53,6 +53,7 @@ echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" > "$LOG_FILE"
 
 command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
 
+echo "Checking Homebrew installation..."
 brew doctor > "$LOG_FILE" 2>&1 || { echo -e "${yellow}WARNING: Detected issues with your Homebrew installation that could cause ACT3 Login to fail. Run \"brew doctor\" to check your system for potential problems.${normal}"; }
 
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools > "$LOG_FILE" 2>&1; then
