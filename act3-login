@@ -237,7 +237,8 @@ echo -e "\n${bold}Creating ACE Hub User Configuration file${normal}"
 ACE_HUB_USER_FILE="$XDG_RUNTIME_DIR/ace/hub/act3.json"
 
 mkdir -p "$XDG_RUNTIME_DIR/ace/hub"
-touch -a "$ACE_HUB_USER_FILE"
+rm "$ACE_HUB_USER_FILE" || echo -n ""
+touch "$ACE_HUB_USER_FILE"
 
 mkdir -p "$XDG_CONFIG_HOME/ace/hub"
 ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/act3.json"
