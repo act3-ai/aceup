@@ -136,13 +136,13 @@ brew list direnv > "$LOG_FILE" 2>&1 || { echo -e "\tInstalling direnv"; brew ins
 mkdir -p "$XDG_CONFIG_HOME/direnv"
 touch -a "$XDG_CONFIG_HOME/direnv/direnvrc"
 
-echo "export NETRC=\"$XDG_RUNTIME_DIR\"/netrc" > "$XDG_CONFIG_HOME/direnv/direnvrc"
-echo "
-cat <<EOF > \$NETRC
+echo "export NETRC=\"$XDG_RUNTIME_DIR\"/netrc
+cat <<EOF > \"\$NETRC\"
 machine git.act3-ace.com
 	login $USERNAME
 	password \$(secret-tool lookup server git.act3-ace.com)
 EOF
+chmod 600 \"$NETRC\"
 " > "$XDG_CONFIG_HOME/direnv/direnvrc"
 
 echo "Configured NETRC to use secure credential storage. (\"$XDG_CONFIG_HOME/direnv/direnvrc\")"
