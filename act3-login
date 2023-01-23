@@ -20,6 +20,10 @@ echo '
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
+# Set no auto update for this script
+export HOMEBREW_NO_AUTO_UPDATE=1
+BREW_BIN=$(brew --prefix)/bin
+
 # Default XDG directories used in the script
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
   XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
@@ -35,10 +39,6 @@ else
   XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
   XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 fi
-
-# Set no auto update for this script
-export HOMEBREW_NO_AUTO_UPDATE=1
-BREW_BIN=$(brew --prefix)/bin
 
 # Create log file
 timestamp=$(date "+%Y-%m-%d_%H-%M-%S")
@@ -241,10 +241,11 @@ touch -a "$ACE_HUB_USER_FILE"
 
 mkdir -p "$XDG_CONFIG_HOME/ace/hub"
 ACE_HUB_USER_FILE_LINK="$XDG_CONFIG_HOME/ace/hub/act3.json"
+echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE\"${normal}"
 if [[ "$ACE_HUB_USER_FILE" != "$ACE_HUB_USER_FILE_LINK" ]]; then
+  echo -e "Linking user configuration file to ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
   ln -s -f "$ACE_HUB_USER_FILE" "$ACE_HUB_USER_FILE_LINK"
 fi
-echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE_LINK\"${normal}"
 encoded=$(echo -n "$USERNAME:$TOKEN" | base64)
 cat <<EOF > "$ACE_HUB_USER_FILE"
 {
