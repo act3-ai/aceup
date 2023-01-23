@@ -21,7 +21,6 @@ echo '
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
 # Default XDG directories used in the script
-if [[WSL_DISTRO_NAME]]
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
   XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
   XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
@@ -60,6 +59,10 @@ brew doctor >> "$LOG_FILE" 2>&1 || { echo -e "${yellow}WARNING: Detected issues 
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >> "$LOG_FILE" 2>&1; then
   echo "Detected an installation of the deprecated ACT3 dev-tools package. This will cause conflicts with installations of Homebrew ACE Tools."
   echo "Run \"apt remove dev-tools\""
+fi
+
+if [[ -n "$WSL_DISTRO_NAME" ]]; then
+  echo "WSL detected. Using less secure authentication."
 fi
 
 # Update in case yq/jq/crane/docker-credential-helper are out of date
