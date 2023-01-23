@@ -113,7 +113,7 @@ printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$
 echo -e "\n${bold}Setting up Git credentials for the ACT3 GitLab instance${normal}"
 
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
-if [[ "$OSTYPE" == "linux-gnu" && -z "$WSL_DISTRO_NAME"]]; then
+if [[ "$OSTYPE" == "linux-gnu" ]] && [[ -z "$WSL_DISTRO_NAME" ]]; then
   echo "Checking for dependencies: git-credential-libsecret"
 	brew list git-credential-libsecret >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling git-credential-libsecret"; brew install git-credential-libsecret >> "$LOG_FILE"; }
 
