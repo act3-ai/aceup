@@ -30,6 +30,11 @@ The ACT3 Login script automatically logs a user into the standard ACT3 services.
 /bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 ``` -->
 
+### Caveats
+
+1. ACT3 Login configures tools installed by Homebrew. Alternate installations of the same tools configured by ACT3 Login will produce unexpected behavior after running the script.
+2. ACT3 Login is not guaranteed to work for WSL2.
+
 ### Troubleshooting
 
 > My previous token is still stored when I check the keyring.

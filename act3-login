@@ -146,6 +146,10 @@ EOF
 " > "$XDG_CONFIG_HOME/direnv/direnvrc"
 
 echo "Configured NETRC to use secure credential storage. (\"$XDG_CONFIG_HOME/direnv/direnvrc\")"
+echo "To use the NETRC credentials for a GoLang project, there are two additional steps:"
+echo "1. Create a .envrc file in the project directory (can be empty)."
+echo "2. Run \"direnv allow\" in the project's directory."
+echo "Add \".envrc\" to your global .gitignore to avoid committing the file."
 }
 
 read -r -p "Do you wish to set up a .netrc file? (y/n)>" yn
