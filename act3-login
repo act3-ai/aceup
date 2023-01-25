@@ -104,7 +104,7 @@ if [[ -z "$WSL_DISTRO_NAME" ]]; then
   "$BREW_BIN"/yq e -i -o=json ".credHelpers.\"reg.git.act3-ace.com\" = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
 fi
 
-echo "Logging into the ACT3 GitLab Container Registry with Crane (reg.git.act3-ace.com)"
+echo "Logging into the ACT3 GitLab Container Registry using Crane (reg.git.act3-ace.com)"
 printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin >> "$LOG_FILE"
 
 # GIT CREDENTIAL STORAGE SETUP

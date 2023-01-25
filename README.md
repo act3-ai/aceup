@@ -24,6 +24,21 @@ The ACT3 Login script automatically logs a user into the standard ACT3 services.
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 ```
 
+### Features
+
+ACT3 Login uses your entered credentials to do the following:
+
+1. Enable secure credential storage for Git and container registry authentication.
+2. Authenticate Git over HTTPS for the ACT3 GitLab.
+3. Store credentials for the ACT3 GitLab Container Registry to be used by tools like ACE Data Tool, Podman, Crane, and Docker.
+4. Add the ACT3 ACE Tools Homebrew Tap, a catalog of tools used at ACT3, including internal tools like ACE Data Tool and ACT3 Project Tool.
+5. Log into the ACT3 GitLab instance with ACT3 Project Tool.
+6. Direct ACE Data Tool to use the ACT3 Telemetry Server.
+7. Create an authenticated ACE Hub User Configuration file to be imported manually.
+8. Set up ACT3 Kubernetes Cluster access
+9. Create a Kubernetes Secret in the user's namespace
+10. **OPTIONAL:** Set up a NETRC environment variable to use for Golang development
+
 <!-- If you use zsh as your shell on macOS, run this command
 
 ```bash
