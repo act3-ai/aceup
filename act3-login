@@ -47,9 +47,7 @@ mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$LOG_FILE"
 echo -e "\nLogs: $LOG_FILE"
 
 # Log XDG directories
-echo "XDG_CACHE_HOME=$XDG_CACHE_HOME" >> "$LOG_FILE"
-echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >> "$LOG_FILE"
-echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" >> "$LOG_FILE"
+{ echo "XDG_CACHE_HOME=$XDG_CACHE_HOME"; echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"; echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"; } >> "$LOG_FILE"
 
 command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
 

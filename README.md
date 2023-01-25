@@ -34,6 +34,9 @@ The ACT3 Login script automatically logs a user into the standard ACT3 services.
 
 1. ACT3 Login configures tools installed by Homebrew. Alternate installations of the same tools configured by ACT3 Login will produce unexpected behavior after running the script.
 2. ACT3 Login is not guaranteed to work for WSL2.
+3. Existing configuration for some affected applications can override ACT3 Login's changes.
+   - If Podman is configured with an `auth.json` file for credentials, those credentials will be used rather than the keychain storage set up by ACT3 Login. Delete entries in `auth.json` corresponding to "reg.git.act3-ace.com" to fix this.
+   - ACE Data Tool configuration is never overwritten by ACT3 Login. Back up your existing ACE Data Tool config file and rerun ACT3 Login to see the config file it creates.
 
 ### Troubleshooting
 
