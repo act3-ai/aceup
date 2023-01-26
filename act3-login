@@ -90,6 +90,13 @@ echo -e "\n${bold}Setting up SSH credentials for Git access to the ACT3 GitLab i
 # Generate SSH Key
 echo "Generating SSH keys"
 ssh-keygen -f "$HOME/.ssh/act3_ecdsa" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $timestamp)" -N "" -q
+#TODO: make a passphrase, use ssh-add to add key to the agent, provide the agent with the passphrase, store the passphrase in the system keychain
+        # on mac: 
+        # WARNING: The -K and -A flags are deprecated and have been replaced
+        #  by the --apple-use-keychain and --apple-load-keychain
+        #  flags, respectively.  To suppress this warning, set the
+        #  environment variable APPLE_SSH_ADD_BEHAVIOR as described in
+        #  the ssh-add(1) manual page.
 
 # Add public key to GitLab user
 echo "Adding public key to GitLab profile on git.act3-ace.com"
