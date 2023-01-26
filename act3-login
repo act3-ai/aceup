@@ -81,39 +81,31 @@ read -r -p "       Enter Username>" USERNAME
 read -s -r -p "       Enter Token>" TOKEN
 echo ""
 
-# GITLAB CONTAINER REGISTRY CREDENTIALS
-echo -e "\n${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
+# GIT SSH CREDENTIALS
+echo -e "\n${bold}Setting up SSH credentials for Git access to the ACT3 GitLab instance${normal}"
 
-# Use yq to add credsStore field to ~/.docker/config.json
-# Use crane to log in to reg.git.act3-ace.com (crane checks login)
-echo -e "Checking for dependencies: docker-credential-helper, yq, crane"
-brew list docker-credential-helper >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling docker-credential-helper"; brew install docker-credential-helper >> "$LOG_FILE"; }
-brew list yq >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling yq"; brew install yq >> "$LOG_FILE"; }
-brew list crane >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling crane"; brew install crane >> "$LOG_FILE"; }
+[ -f "$HOME/.ssh/act3_ecdsa" ] && rm "$HOME/.ssh/act3_ecdsa" # remove existing private key file
+[ -f "$HOME/.ssh/act3_ecdsa.pub" ] && rm "$HOME/.ssh/act3_ecdsa.pub" # remove existing public key file
 
-CREDS_STORE="secretservice"
-if [[ "$OSTYPE" == "darwin"* ]]; then
-	CREDS_STORE="osxkeychain"
-fi
+# Generate SSH Key
+echo "Generating SSH keys"
+ssh-keygen -f "$HOME/.ssh/act3_ecdsa" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $timestamp)" -N "" -q
 
-if [[ -z "$WSL_DISTRO_NAME" ]]; then
-  echo "Configuring registry authentication to use \"$CREDS_STORE\" ($HOME/.docker/config.json)"
-  mkdir -p "$HOME/.docker"
-  touch -a "$HOME/.docker/config.json" # -a tells touch to only change the "access" and "change" times
-  "$BREW_BIN"/yq e -i -o=json ".credsStore = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
-  "$BREW_BIN"/yq e -i -o=json ".credHelpers.\"reg.git.act3-ace.com\" = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
-fi
+# Add public key to GitLab user
+echo "Adding public key to GitLab profile on git.act3-ace.com"
+curl --request POST --header "PRIVATE-TOKEN: $TOKEN" \
+--form "title=Key for $(hostname) (created by ACT3 Login $timestamp)" \
+--form "key=$(cat "$HOME/.ssh/act3_ecdsa.pub")" \
+"https://git.act3-ace.com/api/v4/user/keys" >> "$LOG_FILE" 2>&1 || echo "${yellow}Couldn't add SSH key to GitLab profile${normal}"
 
-echo "Logging into the ACT3 GitLab Container Registry using Crane (reg.git.act3-ace.com)"
-printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin >> "$LOG_FILE"
-
-# GIT CREDENTIAL STORAGE SETUP
-echo -e "\n${bold}Setting up Git credentials for the ACT3 GitLab instance${normal}"
+# GIT HTTPS CREDENTIALS
+echo -e "\n${bold}Setting up HTTPS credentials for Git access to the ACT3 GitLab instance${normal}"
 
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
 if [[ "$OSTYPE" == "linux-gnu" ]] && [[ -z "$WSL_DISTRO_NAME" ]]; then
   echo "Checking for dependencies: git-credential-libsecret"
 	brew list git-credential-libsecret >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling git-credential-libsecret"; brew install git-credential-libsecret >> "$LOG_FILE"; }
+  brew upgrade git-credential-libsecret >> "$LOG_FILE" 2>&1
 
   echo "Configuring Git to use credential helper \"libsecret\""
   git config --global credential.helper "libsecret" >> "$LOG_FILE"
@@ -131,12 +123,44 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
   [[ $(command -v git) == "/usr/bin/git" ]] || echo "${yellow}WARNING: Your system is using a non-standard installation of git. Use \"/usr/bin/git\" to take advantage of macOS keychain secure credential storage. If you have installed git via Homebrew, run \"brew uninstall git\"${normal}"
 fi
 
+# GITLAB CONTAINER REGISTRY CREDENTIALS
+echo -e "\n${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
+
+# Use yq to add credsStore field to ~/.docker/config.json
+# Use crane to log in to reg.git.act3-ace.com (crane checks login)
+echo -e "Checking for dependencies: docker-credential-helper, yq, crane"
+brew list docker-credential-helper >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling docker-credential-helper"; brew install docker-credential-helper >> "$LOG_FILE"; }
+brew upgrade docker-credential-helper >> "$LOG_FILE" 2>&1
+
+brew list yq >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling yq"; brew install yq >> "$LOG_FILE"; }
+brew upgrade yq >> "$LOG_FILE" 2>&1
+
+brew list crane >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling crane"; brew install crane >> "$LOG_FILE"; }
+brew upgrade crane >> "$LOG_FILE" 2>&1
+
+CREDS_STORE="secretservice"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+	CREDS_STORE="osxkeychain"
+fi
+
+if [[ -z "$WSL_DISTRO_NAME" ]]; then
+  echo "Configuring registry authentication to use \"$CREDS_STORE\" ($HOME/.docker/config.json)"
+  mkdir -p "$HOME/.docker"
+  touch -a "$HOME/.docker/config.json" # -a tells touch to only change the "access" and "change" times
+  "$BREW_BIN"/yq e -i -o=json ".credsStore = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
+  "$BREW_BIN"/yq e -i -o=json ".credHelpers.\"reg.git.act3-ace.com\" = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
+fi
+
+echo "Logging into the ACT3 GitLab Container Registry using Crane (reg.git.act3-ace.com)"
+printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin >> "$LOG_FILE"
+
 # ACE TOOLS HOMEBREW TAP
 echo -e "\n${bold}NETRC Creation (for Golang development)${normal}"
 
 create_netrc () {
 echo "Checking for dependencies: direnv"
 brew list direnv >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling direnv"; brew install direnv >> "$LOG_FILE"; }
+brew upgrade direnv >> "$LOG_FILE" 2>&1
 
 mkdir -p "$XDG_CONFIG_HOME/direnv"
 touch -a "$XDG_CONFIG_HOME/direnv/direnvrc"
@@ -182,6 +206,7 @@ if [[ -z "$WSL_DISTRO_NAME" ]]; then
   # Install act3-pt and log in to git.act3-ace.com
   echo "Checking for act3-pt... "
   brew list act3-pt >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling act3-pt"; brew install act3-pt >> "$LOG_FILE"; }
+  brew upgrade act3-pt >> "$LOG_FILE" 2>&1
 
   echo "Logging in with act3-pt"
   printf '%s\n' "$TOKEN" | "$BREW_BIN"/act3-pt login --name act3 --url git.act3-ace.com --token-stdin >> "$LOG_FILE"
@@ -271,8 +296,13 @@ echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
 
 echo -e "Checking for dependencies: kubectl, krew, oidc-login"
 brew list kubernetes-cli >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli >> "$LOG_FILE"; }
+brew upgrade kubernetes-cli >> "$LOG_FILE" 2>&1
+
 brew list krew >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling krew"; brew install krew >> "$LOG_FILE"; }
-command -v kubectl-oidc-login >/dev/null 2>&1 || { echo -e "\tInstalling konfig"; "$BREW_BIN"/kubectl-krew install oidc-login >> "$LOG_FILE"; }
+brew upgrade krew >> "$LOG_FILE" 2>&1
+
+command -v kubectl-oidc-login >/dev/null 2>&1 || { echo -e "\tInstalling oidc-login"; "$BREW_BIN"/kubectl-krew install oidc-login >> "$LOG_FILE"; }
+"$BREW_BIN"/kubectl-krew update && "$BREW_BIN"/kubectl-krew upgrade oidc-login
 
 # curl the file from wherever it ends up 
 CLUSTERCONFIG="$HOME/.kube/act3.yaml"
