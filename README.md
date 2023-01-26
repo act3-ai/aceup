@@ -1,35 +1,53 @@
-# aceup
+# ACEup
 
-Public scripts to bootstrap the ACE installation process
+ACEup contains public scripts to bootstrap the ACE installation process, such as ACT3 Login.
 
 ## New User Setup
 
 Run the following commands to get your new system set up to work at ACT3
 
-> Linux and macOS only, requires Homebrew and Git to be installed.
-
 ```bash
+# Runs ACT3 Login, installs ACE Tools & ACE Kubectl Plugins
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 brew install ace-tools
 ace-kubectl-plugins
 ```
 
+> Linux and macOS only, requires Homebrew and Git to be installed.
+
 ## ACT3 Login
 
-The ACT3 Login script automatically logs a user into the standard ACT3 services. It also sets up secure credential storage for your system.
+ACT3 Login is designed to:
 
-> Linux and macOS only, requires Homebrew and Git to be installed.
+- Authenticate users to ACT3 services
+- Promote secure credential mangement
+- Simplify system setup
+
+ACT3 Login does the following:
+
+- Enables secure credential storage using your system's keychain
+- Adds the ACE Tools Homebrew Tap for access to internal tools
+- Authentication for the following:
+  - Git (SSH and HTTPS)
+  - GitLab Container Registry
+  - ACT3 Project Tool
+  - ACT3 Kubernetes Cluster
+  - ACE Hub (User Configuration file needs manually imported)
+
+ACT3 Login uses a GitLab Personal Access Token to authenticate users to ACT3 services. ACT3 Login also enables secure credential storage for your system.
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 ```
+
+> Linux and macOS only, requires Homebrew and Git to be installed.
 
 ### Features
 
 ACT3 Login uses your entered credentials to do the following:
 
 1. Enable secure credential storage for Git and container registry authentication.
-2. Authenticate Git over HTTPS for the ACT3 GitLab.
+2. Authenticate Git over SSH and HTTPS for the ACT3 GitLab.
 3. Store credentials for the ACT3 GitLab Container Registry to be used by tools like ACE Data Tool, Podman, Crane, and Docker.
 4. Add the ACT3 ACE Tools Homebrew Tap, a catalog of tools used at ACT3, including internal tools like ACE Data Tool and ACT3 Project Tool.
 5. Log into the ACT3 GitLab instance with ACT3 Project Tool.
@@ -39,33 +57,14 @@ ACT3 Login uses your entered credentials to do the following:
 9. Create a Kubernetes Secret in the user's namespace
 10. **OPTIONAL:** Set up a NETRC environment variable to use for Golang development
 
-<!-- If you use zsh as your shell on macOS, run this command
-
-```bash
-/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
-``` -->
-
 ### Caveats
 
 1. ACT3 Login configures tools installed by Homebrew. Alternate installations of the same tools configured by ACT3 Login will produce unexpected behavior after running the script.
-2. ACT3 Login is not guaranteed to work for WSL2.
-3. Existing configuration for some affected applications can override ACT3 Login's changes.
+2. Existing configuration for some affected applications can override ACT3 Login's changes.
    - If Podman is configured with an `auth.json` file for credentials, those credentials will be used rather than the keychain storage set up by ACT3 Login. Delete entries in `auth.json` corresponding to "reg.git.act3-ace.com" to fix this.
    - ACE Data Tool configuration is never overwritten by ACT3 Login. Back up your existing ACE Data Tool config file and rerun ACT3 Login to see the config file it creates.
 
-### Troubleshooting
+## Support
 
-> My previous token is still stored when I check the keyring.
-
-Try relaunching the keyring GUI, it might not have updated yet.
-
-> I am getting this error during Git credential setup: `git: 'credential-osxkeychain' is not a git command. See 'git --help'.`
-
-You may be using an alternate installation of Git.
-
-1. Check what `git` executable you are using: `which -a git`
-2. If there are multiple entries, run `brew uninstall git` and then rerun ACT3 Login
-
-> I am getting this error during Kubernetes secret creation: `error: unable to load root certificates: unable to parse bytes as PEM block`
-
-You may have an out of date certificate in your cluster configuration. Back up your `~/.kube/` directory, delete the `~/.kube/` directory, and rerun ACT3 Login.
+- **[Troubleshooting FAQ](docs/troubleshooting-faq.md)**: consult list of frequently asked questions and their answers.
+- **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/ace-hub)**: create a post in the ACE Hub channel for assistance.
