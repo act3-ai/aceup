@@ -34,13 +34,16 @@ ACT3 Login does the following:
   - ACT3 Kubernetes Cluster
   - ACE Hub (User Configuration file needs manually imported)
 
-ACT3 Login uses a GitLab Personal Access Token to authenticate users to ACT3 services. ACT3 Login also enables secure credential storage for your system.
+### Run ACT3 Login
+
+Prerequisites:
+
+- Linux, macOS, or WSL2
+- Git and Homebrew installed
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 ```
-
-> Linux and macOS only, requires Homebrew and Git to be installed.
 
 ### Features
 
