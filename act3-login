@@ -89,7 +89,19 @@ echo -e "\n${bold}Setting up SSH credentials for Git access to the ACT3 GitLab i
 
 # Generate SSH Key
 echo "Generating SSH keys"
-ssh-keygen -f "$HOME/.ssh/act3_ecdsa" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $timestamp)" -N "" -q
+read -s -r -p "       Enter a passphrase for SSH key>" PASSPHRASE
+ssh-keygen -f "$HOME/.ssh/act3_ecdsa" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $timestamp)" -N "$PASSPHRASE" -q
+
+echo "Adding key to the ssh-agent"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  brew tap theseal/ssh-askpass
+  brew install ssh-askpass
+  echo "$PASSPHRASE" | ssh-add --apple-use-keychain "$HOME/.ssh/act3_ecdsa" -q
+else
+  echo "$PASSPHRASE" | ssh-add "$HOME/.ssh/act3_ecdsa" -q
+fi
+
+# printf "$TOKEN" | ssh-add --apple-use-keychain "$HOME/.ssh/act3_ecdsa"
 #TODO: make a passphrase, use ssh-add to add key to the agent, provide the agent with the passphrase, store the passphrase in the system keychain
         # on mac: 
         # WARNING: The -K and -A flags are deprecated and have been replaced
