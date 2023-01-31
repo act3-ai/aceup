@@ -51,7 +51,7 @@ echo -e "\nLogs: $LOG_FILE"
 
 command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
 
-echo "Checking Homebrew installation..."
+echo -e "\nChecking Homebrew installation..."
 brew doctor >> "$LOG_FILE" 2>&1 || { echo -e "${yellow}WARNING: Detected issues with your Homebrew installation that could cause ACT3 Login to fail. Run \"brew doctor\" to check your system for potential problems.${normal}"; }
 
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >> "$LOG_FILE" 2>&1; then
@@ -70,6 +70,11 @@ brew update >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: brew update failed, you
 echo "Running brew upgrade..."
 # all_dependencies="docker-credential-helper yq crane git-credential-libsecret direnv act3-pt kubectl"
 brew upgrade >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
+
+# Function to install a homebrew dependency
+brew_install () {
+{ brew list "$1" && brew upgrade "$1"; } >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling $1"; brew install "$1" >> "$LOG_FILE"; }
+}
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
@@ -111,8 +116,7 @@ echo -e "\n${bold}Setting up HTTPS credentials for Git access to the ACT3 GitLab
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
 if [[ "$OSTYPE" == "linux-gnu" ]] && [[ -z "$WSL_DISTRO_NAME" ]]; then
   echo "Checking for dependencies: git-credential-libsecret"
-	brew list git-credential-libsecret >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling git-credential-libsecret"; brew install git-credential-libsecret >> "$LOG_FILE"; }
-  brew upgrade git-credential-libsecret >> "$LOG_FILE" 2>&1
+  brew_install "git-credential-libsecret"
 
   echo "Configuring Git to use credential helper \"libsecret\""
   git config --global credential.helper "libsecret" >> "$LOG_FILE"
@@ -136,14 +140,9 @@ echo -e "\n${bold}Setting up credentials for the ACT3 GitLab Container Registry$
 # Use yq to add credsStore field to ~/.docker/config.json
 # Use crane to log in to reg.git.act3-ace.com (crane checks login)
 echo -e "Checking for dependencies: docker-credential-helper, yq, crane"
-brew list docker-credential-helper >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling docker-credential-helper"; brew install docker-credential-helper >> "$LOG_FILE"; }
-brew upgrade docker-credential-helper >> "$LOG_FILE" 2>&1
-
-brew list yq >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling yq"; brew install yq >> "$LOG_FILE"; }
-brew upgrade yq >> "$LOG_FILE" 2>&1
-
-brew list crane >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling crane"; brew install crane >> "$LOG_FILE"; }
-brew upgrade crane >> "$LOG_FILE" 2>&1
+brew_install "docker-credential-helper"
+brew_install "yq"
+brew_install "crane"
 
 CREDS_STORE="secretservice"
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -166,8 +165,7 @@ echo -e "\n${bold}NETRC Creation (for Golang development)${normal}"
 
 create_netrc () {
 echo "Checking for dependencies: direnv"
-brew list direnv >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling direnv"; brew install direnv >> "$LOG_FILE"; }
-brew upgrade direnv >> "$LOG_FILE" 2>&1
+brew_install "direnv"
 
 mkdir -p "$XDG_CONFIG_HOME/direnv"
 touch -a "$XDG_CONFIG_HOME/direnv/direnvrc"
@@ -212,8 +210,7 @@ if [[ -z "$WSL_DISTRO_NAME" ]]; then
 
   # Install act3-pt and log in to git.act3-ace.com
   echo "Checking for act3-pt... "
-  brew list act3-pt >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling act3-pt"; brew install act3-pt >> "$LOG_FILE"; }
-  brew upgrade act3-pt >> "$LOG_FILE" 2>&1
+  brew_install "act3-pt"
 
   echo "Logging in with act3-pt"
   printf '%s\n' "$TOKEN" | "$BREW_BIN"/act3-pt login --name act3 --url git.act3-ace.com --token-stdin >> "$LOG_FILE"
@@ -302,16 +299,17 @@ echo "You must import this user configuration file to ACE Hub to use your creden
 echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
 
 echo -e "Checking for dependencies: kubectl, krew, oidc-login"
-brew list kubernetes-cli >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling kubectl"; brew install kubernetes-cli >> "$LOG_FILE"; }
-brew upgrade kubernetes-cli >> "$LOG_FILE" 2>&1
+brew_install "kubectl"
+brew_install "krew"
+"$BREW_BIN"/kubectl-krew update
 
-brew list krew >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling krew"; brew install krew >> "$LOG_FILE"; }
-brew upgrade krew >> "$LOG_FILE" 2>&1
+if command -v kubectl-oidc_login >/dev/null 2>&1; then
+  "$BREW_BIN"/kubectl-krew upgrade oidc-login >> "$LOG_FILE" 2>&1 || echo "Plugin oidc-login up-to-date"
+else
+  echo -e "\tInstalling oidc-login"
+  "$BREW_BIN"/kubectl-krew install oidc-login >> "$LOG_FILE" 2>&1
+fi
 
-command -v kubectl-oidc-login >/dev/null 2>&1 || { echo -e "\tInstalling oidc-login"; "$BREW_BIN"/kubectl-krew install oidc-login >> "$LOG_FILE"; }
-"$BREW_BIN"/kubectl-krew update && "$BREW_BIN"/kubectl-krew upgrade oidc-login
-
-# curl the file from wherever it ends up 
 CLUSTERCONFIG="$HOME/.kube/act3.yaml"
 echo -e "Creating cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
 
