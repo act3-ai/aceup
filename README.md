@@ -39,8 +39,7 @@ ACT3 Login does the following:
 After running the login script above, new users also need to run the following commands for your system set up to work at ACT3
 
 ```bash
-# Runs ACT3 Login, installs ACE Tools & ACE Kubectl Plugins
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+# Installs ACE Tools & ACE Kubectl Plugins
 brew install ace-tools
 ace-kubectl-plugins
 ```
