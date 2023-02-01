@@ -13,7 +13,7 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 ACT3 Login is designed to:
 
 - Authenticate users to ACT3 services
-- Promote secure credential mangement
+- Promote secure credential management
 - Simplify system setup
 
 ACT3 Login does the following:
