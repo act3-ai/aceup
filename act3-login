@@ -168,8 +168,10 @@ echo "Checking for dependencies: direnv"
 brew_install "direnv"
 
 mkdir -p "$XDG_CONFIG_HOME/direnv"
-rm "$XDG_CONFIG_HOME/direnv/direnvrc" || echo -n ""
-touch -a "$XDG_CONFIG_HOME/direnv/direnvrc"
+DIRENVRC="$XDG_CONFIG_HOME/direnv/direnvrc"
+[ -f "$DIRENVRC" ] && cp "$DIRENVRC" "$DIRENVRC.bak-$(date +%s)"
+rm "$DIRENVRC" || echo -n ""
+touch -a "$DIRENVRC"
 
 echo "export NETRC=\"$XDG_RUNTIME_DIR\"/netrc
 cat <<EOF > \"\$NETRC\"
