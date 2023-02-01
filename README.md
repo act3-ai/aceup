@@ -25,7 +25,8 @@ ACT3 Login does the following:
   - ACT3 GitLab Container Registry
   - ACT3 Project Tool
   - ACT3 Kubernetes clusters
-  - ACE Hub (User Configuration file needs manually imported)
+  - ACE Hub
+- Generates a User Configuration file that is manually imported into ACE Hub to save Image Pull Secrets
 
 ### Run ACT3 Login
 
