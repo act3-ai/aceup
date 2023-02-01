@@ -19,12 +19,12 @@ ACT3 Login is designed to:
 ACT3 Login does the following:
 
 - Enables secure credential storage using your system's keychain
-- Adds the ACE Tools Homebrew Tap for access to internal tools
+- Adds the ACE Tools Homebrew tap for access to internal tools
 - Authentication for the following:
   - Git (SSH and HTTPS)
   - ACT3 GitLab Container Registry
   - ACT3 Project Tool
-  - ACT3 Kubernetes Clusters
+  - ACT3 Kubernetes clusters
   - ACE Hub (User Configuration file needs manually imported)
 
 ### Run ACT3 Login
