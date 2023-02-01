@@ -20,6 +20,8 @@ echo '
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
+command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
+
 # Set no auto update for this script
 export HOMEBREW_NO_AUTO_UPDATE=1
 BREW_BIN=$(brew --prefix)/bin
@@ -48,8 +50,6 @@ echo -e "\nLogs: $LOG_FILE"
 
 # Log XDG directories
 { echo "XDG_CACHE_HOME=$XDG_CACHE_HOME"; echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"; echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"; } >> "$LOG_FILE"
-
-command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
 
 echo -e "\nChecking Homebrew installation..."
 brew doctor >> "$LOG_FILE" 2>&1 || { echo -e "${yellow}WARNING: Detected issues with your Homebrew installation that could cause ACT3 Login to fail. Run \"brew doctor\" to check your system for potential problems.${normal}"; }
@@ -164,30 +164,38 @@ printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$
 echo -e "\n${bold}NETRC Creation (for Golang development)${normal}"
 
 create_netrc () {
-echo "Checking for dependencies: direnv"
-brew_install "direnv"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  cat <<EOF > "$HOME/.netrc"
+machine git.act3-ace.com
+  login $USERNAME
+  password $TOKEN
+EOF
+else
+  echo "Checking for dependencies: direnv"
+  brew_install "direnv"
 
-mkdir -p "$XDG_CONFIG_HOME/direnv"
-DIRENVRC="$XDG_CONFIG_HOME/direnv/direnvrc"
-[ -f "$DIRENVRC" ] && cp "$DIRENVRC" "$DIRENVRC.bak-$(date +%s)"
-rm "$DIRENVRC" || echo -n ""
-touch -a "$DIRENVRC"
+  mkdir -p "$XDG_CONFIG_HOME/direnv"
+  DIRENVRC="$XDG_CONFIG_HOME/direnv/direnvrc"
+  [ -f "$DIRENVRC" ] && cp "$DIRENVRC" "$DIRENVRC.bak-$(date +%s)"
+  rm "$DIRENVRC" || echo -n ""
+  touch -a "$DIRENVRC"
 
-echo "export NETRC=\"$XDG_RUNTIME_DIR\"/netrc
+  echo "export NETRC=\"$XDG_RUNTIME_DIR\"/netrc
 cat <<EOF > \"\$NETRC\"
 machine git.act3-ace.com
-	login $USERNAME
-	password \$(secret-tool lookup server git.act3-ace.com)
+  login $USERNAME
+  password \$(secret-tool lookup server git.act3-ace.com)
 EOF
 chmod 600 \"$NETRC\"
 " > "$XDG_CONFIG_HOME/direnv/direnvrc"
 
-echo "Configured NETRC to use secure credential storage. (\"$XDG_CONFIG_HOME/direnv/direnvrc\")"
-echo "To use the NETRC credentials for a GoLang project, there are additional steps:"
-echo "1. Create a .envrc file in the project directory (can be empty)."
-echo "2. Run \"direnv allow\" in the project's directory."
-echo "3. Add the ACT3 GitLab to your GOPRIVATE: go env -w GOPRIVATE git.act3-ace.com"
-echo "Add \".envrc\" to your global .gitignore to avoid committing the file."
+  echo "Configured NETRC to use secure credential storage. (\"$XDG_CONFIG_HOME/direnv/direnvrc\")"
+  echo "To use the NETRC credentials for a GoLang project, there are additional steps:"
+  echo "1. Create a .envrc file in the project directory (can be empty)."
+  echo "2. Run \"direnv allow\" in the project's directory."
+  echo "3. Add the ACT3 GitLab to your GOPRIVATE: go env -w GOPRIVATE git.act3-ace.com"
+  echo "Add \".envrc\" to your global .gitignore to avoid committing the file."
+fi 
 }
 
 read -r -p "Do you wish to set up a .netrc file? (y/n)>" yn
