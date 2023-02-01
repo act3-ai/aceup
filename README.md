@@ -8,19 +8,6 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 - Git installed
 - Homebrew installed
 
-## New User Setup
-
-Run the following commands to get your new system set up to work at ACT3
-
-```bash
-# Runs ACT3 Login, installs ACE Tools & ACE Kubectl Plugins
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
-brew install ace-tools
-ace-kubectl-plugins
-```
-
-> Linux and macOS only, requires Homebrew and Git to be installed.
-
 ## ACT3 Login
 
 ACT3 Login is designed to:
@@ -45,6 +32,19 @@ ACT3 Login does the following:
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 ```
+
+## New User Setup
+
+Run the following commands to get your new system set up to work at ACT3
+
+```bash
+# Runs ACT3 Login, installs ACE Tools & ACE Kubectl Plugins
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+brew install ace-tools
+ace-kubectl-plugins
+```
+
+> Linux and macOS only, requires Homebrew and Git to be installed.
 
 ### Features
 
