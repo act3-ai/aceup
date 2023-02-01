@@ -2,6 +2,12 @@
 
 ACEup contains public scripts to bootstrap the ACE installation process, such as ACT3 Login.
 
+## Prerequisites
+
+- Linux, macOS, or WSL2
+- Git installed
+- Homebrew installed
+
 ## New User Setup
 
 Run the following commands to get your new system set up to work at ACT3
@@ -35,11 +41,6 @@ ACT3 Login does the following:
   - ACE Hub (User Configuration file needs manually imported)
 
 ### Run ACT3 Login
-
-Prerequisites:
-
-- Linux, macOS, or WSL2
-- Git and Homebrew installed
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
