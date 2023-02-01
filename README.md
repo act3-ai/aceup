@@ -75,6 +75,4 @@ ACT3 Login uses your entered credentials to do the following:
 ## Support
 
 - **[Troubleshooting FAQ](docs/troubleshooting-faq.md)**: consult list of frequently asked questions and their answers.
-- **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/ace-hub)**: create a post in the ACE Hub channel for assistance.
-
-<!-- The MM channel linked above is for ACE Hub. Is that correct? Shouldn't it be DevOps or ACE Admin? -->
+- **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops)**: create a post in the ACE Hub channel for assistance.
