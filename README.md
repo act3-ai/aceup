@@ -36,13 +36,19 @@ ACT3 Login does the following:
 
 ## New User Setup
 
-After running the login script above, new users also need to run the following commands for your system set up to work at ACT3
+After running the login script above, new users also need to run the following commands for your system set up to work at ACT3:
 
 ```bash
-# Installs ACE Tools & ACE Kubectl Plugins
+# Install ACE Tools
 brew install ace-tools
 ace-kubectl-plugins
 ```
+
+```sh
+#Install ACE Kubectl Plugins
+ace-kubectl-plugins
+```
+
 
 > Linux and macOS only, requires Homebrew and Git to be installed.
 
