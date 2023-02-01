@@ -93,9 +93,15 @@ read -s -r -p "       Enter a passphrase for SSH key>" PASSPHRASE
 ssh-keygen -f "$HOME/.ssh/act3_ecdsa" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $timestamp)" -N "$PASSPHRASE" -q
 
 echo "Adding key to the ssh-agent"
+act3_askpass="$BREW_BIN/act3-askpass"
+[ -f "$act3_askpass" ] || touch "$act3_askpass"
+chmod +x "$act3_askpass"
+cat <<EOF > "$act3_askpass"
+#!/usr/bin/env sh
+echo "$PASSPHRASE"
+EOF
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  brew tap theseal/ssh-askpass
-  brew install ssh-askpass
   echo "$PASSPHRASE" | ssh-add --apple-use-keychain "$HOME/.ssh/act3_ecdsa" -q
 else
   echo "$PASSPHRASE" | ssh-add "$HOME/.ssh/act3_ecdsa" -q
