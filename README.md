@@ -36,7 +36,7 @@ ACT3 Login does the following:
 
 ## New User Setup
 
-Run the following commands to get your new system set up to work at ACT3
+After running the login script above, new users also need to run the following commands for your system set up to work at ACT3
 
 ```bash
 # Runs ACT3 Login, installs ACE Tools & ACE Kubectl Plugins
