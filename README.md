@@ -60,11 +60,11 @@ ACT3 Login uses your entered credentials to do the following:
 - Authenticate Git over SSH and HTTPS for the ACT3 GitLab
 - Store credentials for the ACT3 GitLab Container Registry to be used by tools like ACE Data Tool, Podman, Crane, and Docker
 - **OPTIONAL:** Set up a NETRC environment variable to use for Golang development
-- Add the ACT3 ACE Tools Homebrew Tap, a catalog of tools used at ACT3, including internal tools like ACE Data Tool and ACT3 Project Tool
+- Add the ACT3 ACE Tools Homebrew tap, a catalog of tools used at ACT3, including internal tools like ACE Data Tool and ACT3 Project Tool
 - Log into the ACT3 GitLab instance with ACT3 Project Tool
-- Direct ACE Data Tool to use the ACT3 Telemetry Server
-- Create an authenticated ACE Hub User Configuration file to be imported manually
-- Set up ACT3 Kubernetes Cluster access
+- Direct ACE Data Tool to use the ACT3 Telemetry server
+- Create an authenticated ACE Hub User Configuration file (note: this file must be imported manually)
+- Set up ACT3 Kubernetes cluster access
 - Create a Kubernetes Secret in the user's namespace
 
 ### Caveats
