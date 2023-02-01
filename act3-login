@@ -193,7 +193,8 @@ chmod 600 \"$NETRC\"
   echo "To use the NETRC credentials for a GoLang project, there are additional steps:"
   echo "1. Create a .envrc file in the project directory (can be empty)."
   echo "2. Run \"direnv allow\" in the project's directory."
-  echo "3. Add the ACT3 GitLab to your GOPRIVATE: go env -w GOPRIVATE git.act3-ace.com"
+  echo "3. Add the ACT3 GitLab to your GOPRIVATE (the following command will overwrite existing GOPRIVATE):
+  go env -w GOPRIVATE git.act3-ace.com"
   echo "Add \".envrc\" to your global .gitignore to avoid committing the file."
 fi 
 }
