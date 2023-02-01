@@ -4,9 +4,12 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 
 ## Prerequisites
 
+- ACT3 Active Directory account
 - Linux, macOS, or WSL2
 - Homebrew installed
 - Git installed
+
+<!-- Since one of the errors we've seen has to do with how Git is installed, should the prereq for Git include/specify that Git should be installed via Homebrew? -->
 
 ## ACT3 Login
 
