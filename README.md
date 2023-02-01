@@ -5,8 +5,8 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 ## Prerequisites
 
 - Linux, macOS, or WSL2
-- Git installed
 - Homebrew installed
+- Git installed
 
 ## ACT3 Login
 
