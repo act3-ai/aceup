@@ -49,9 +49,6 @@ ace-kubectl-plugins
 ace-kubectl-plugins
 ```
 
-
-> Linux and macOS only, requires Homebrew and Git to be installed.
-
 ### Features
 
 ACT3 Login uses your entered credentials to do the following:
