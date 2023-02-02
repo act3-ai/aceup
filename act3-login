@@ -101,10 +101,13 @@ cat <<EOF > "$act3_askpass"
 echo "$PASSPHRASE"
 EOF
 
+SSH_ASKPASS=$act3_askpass
+DISPLAY=$act3_askpass
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "$PASSPHRASE" | ssh-add --apple-use-keychain "$HOME/.ssh/act3_ecdsa" -q
+  ssh-add --apple-use-keychain "$HOME/.ssh/act3_ecdsa" -q
 else
-  echo "$PASSPHRASE" | ssh-add "$HOME/.ssh/act3_ecdsa" -q
+  ssh-add "$HOME/.ssh/act3_ecdsa" -q
 fi
 
 # printf "$TOKEN" | ssh-add --apple-use-keychain "$HOME/.ssh/act3_ecdsa"
