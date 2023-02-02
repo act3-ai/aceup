@@ -312,8 +312,9 @@ EOF
 echo "You must import this user configuration file to ACE Hub to use your credentials. The file will be destroyed on next reboot."
 
 # CLUSTER ACCESS CONFIGURATION
-echo -e "\n${bold}Setting up ACT3 Kubernetes cluster access${normal}"
+echo -e "\n${bold}Set up ACT3 Kubernetes cluster access${normal}"
 
+setup_cluster_access () {
 echo -e "Checking for dependencies: kubectl, krew, oidc-login"
 brew_install "kubectl"
 brew_install "krew"
@@ -391,5 +392,14 @@ if [[ "$output" == *"already exists"* ]]; then
 elif [[ "$output" == *"error"* ]]; then
   echo "${yellow}WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${normal}"
 fi
+}
+
+echo "Setting up ACT3 Kubernetes cluster access will back up your existing cluster configuration before creating a new config file."
+read -r -p "Do you wish to proceed?
+(y/n)>" yn
+case $yn in
+	[Yy]* ) setup_cluster_access;;
+	* ) echo "Skipping cluster access setup";;
+esac
 
 echo -e "\n${bold}Success!${normal}"

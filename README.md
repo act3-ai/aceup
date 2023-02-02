@@ -56,8 +56,8 @@ ACT3 Login uses your entered credentials to do the following:
 - Log into the ACT3 GitLab instance with ACT3 Project Tool
 - Direct ACE Data Tool to use the ACT3 Telemetry server
 - Create an authenticated ACE Hub User Configuration file (note: this file must be imported manually)
-- Set up ACT3 Kubernetes cluster access
-- Create a Kubernetes Secret in the user's namespace
+- **OPTIONAL:** Set up ACT3 Kubernetes cluster access
+- **OPTIONAL:** Create a Kubernetes Secret in the user's namespace
 
 ### Caveats
 
