@@ -37,17 +37,11 @@ ACT3 Login does the following:
 
 ## New User Setup
 
-After running the login script above, new users also need to run the following commands for your system set up to work at ACT3:
+After running the login script above, new users also need to run the following commands for your system set up to work at ACT3 by installing the ACE Tools collection:
 
 ```sh
 # Install ACE Tools
 brew install ace-tools
-ace-kubectl-plugins
-```
-
-```sh
-#Install ACE Kubectl Plugins
-ace-kubectl-plugins
 ```
 
 ### Features
