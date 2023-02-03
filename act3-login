@@ -90,7 +90,7 @@ echo -e "\n${bold}Setting up SSH credentials for Git access to the ACT3 GitLab i
 # Generate SSH Key
 echo "Generating SSH keys"
 read -s -r -p "       Enter a passphrase for SSH key>" PASSPHRASE
-ssh-keygen -f "$HOME/.ssh/act3_ecdsa" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $timestamp)" -N "$PASSPHRASE" -q
+ssh-keygen -f "$HOME/.ssh/act3_ecdsa" -t ecdsa -b 521 -C "Key for $USERNAME (created by ACT3 Login $timestamp)" -N "$PASSPHRASE" -q
 
 echo "Adding key to the ssh-agent"
 act3_askpass="$BREW_BIN/act3-askpass"
