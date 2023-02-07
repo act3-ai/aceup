@@ -280,8 +280,7 @@ ACE_HUB_USER_FILE="$HOME/Downloads/ace/hub/act3.json"
 
 echo -e "Creating user configuration file ${bold}\"$ACE_HUB_USER_FILE\"${normal}"
 [ -f "$ACE_HUB_USER_FILE" ] && rm "$ACE_HUB_USER_FILE"
-touch "$ACE_HUB_USER_FILE"
-
+mkdir -p "$HOME/Downloads/ace/hub" && touch "$ACE_HUB_USER_FILE"
 
 encoded=$(echo -n "$USERNAME:$TOKEN" | base64)
 cat <<EOF > "$ACE_HUB_USER_FILE"
