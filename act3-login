@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# To run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+
 #TODO: add DoD certificate installation
 
 # Have command error out on any command failure
@@ -20,7 +22,7 @@ echo '
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
-command -v brew >/dev/null 2>&1 || { echo -e "Homebrew not installed, install Homebrew with the following command:\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
+command -v brew >/dev/null 2>&1 || { echo -e "${yellow}Homebrew not installed, install Homebrew with the following command:${normal}\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
 
 # Set no auto update for this script
 export HOMEBREW_NO_AUTO_UPDATE=1
