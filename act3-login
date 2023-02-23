@@ -172,6 +172,7 @@ machine git.act3-ace.com
   login $USERNAME
   password $TOKEN
 EOF
+  chmod 600 "$HOME/.netrc"
 else
   echo "Checking for dependencies: direnv"
   brew_install "direnv"
