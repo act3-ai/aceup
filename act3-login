@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# To run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+# To run: /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 
 #TODO: add DoD certificate installation
 
@@ -22,11 +22,7 @@ echo '
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
-command -v brew >/dev/null 2>&1 || { echo -e "${yellow}Homebrew not installed, install Homebrew with the following command:${normal}\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
-
-# Set no auto update for this script
-export HOMEBREW_NO_AUTO_UPDATE=1
-BREW_BIN=$(brew --prefix)/bin
+echo -e "\n${bold}Preparation:${normal}"
 
 # Default XDG directories used in the script
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -48,41 +44,70 @@ fi
 timestamp=$(date "+%Y-%m-%d_%H-%M-%S")
 LOG_FILE="$XDG_CACHE_HOME/act3/login/logs_$timestamp"
 mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$LOG_FILE"
-echo -e "\nLogs: $LOG_FILE"
+echo "Created log file: $LOG_FILE"
 
 # Log XDG directories
-{ echo "XDG_CACHE_HOME=$XDG_CACHE_HOME"; echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"; echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"; } >> "$LOG_FILE"
+{ echo -e "XDG_CACHE_HOME=$XDG_CACHE_HOME\nXDG_RUNTIME_DIR=$XDG_RUNTIME_DIR\nXDG_CONFIG_HOME=$XDG_CONFIG_HOME"; } >> "$LOG_FILE"
 
-echo -e "\nChecking Homebrew installation..."
-brew doctor >> "$LOG_FILE" 2>&1 || { echo -e "${yellow}WARNING: Detected issues with your Homebrew installation that could cause ACT3 Login to fail. Run \"brew doctor\" to check your system for potential problems.${normal}"; }
+# FAIL IF HOMEBREW IS NOT INSTALLED
+command -v brew >/dev/null 2>&1 || { echo -e "${yellow}Homebrew not installed, install Homebrew with the following command:${normal}\n\n/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nAborting."; exit 1; }
 
+# Set no auto update for this script
+export HOMEBREW_NO_AUTO_UPDATE=1
+BREW_BIN=$(brew --prefix)/bin
+
+# CHECK IF dev-tools IS INSTALLED AND EXPLAIN HOW TO UNINSTALL
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >> "$LOG_FILE" 2>&1; then
   echo "Detected an installation of the deprecated ACT3 dev-tools package. This will cause conflicts with installations of Homebrew ACE Tools."
   echo "Run \"apt remove dev-tools\""
 fi
 
-if [[ -n "$WSL_DISTRO_NAME" ]]; then
-  echo "WSL detected. Using less secure authentication."
-fi
-
 # Update in case yq/jq/crane/docker-credential-helper are out of date
-echo -e "\nUpdating Homebrew Formula dependencies..."
+echo "Updating Homebrew Formula dependencies:"
+
+# Check homebrew installation for issues with "brew doctor"
+echo "Checking Homebrew installation..."
+brew doctor >> "$LOG_FILE" 2>&1 || { echo -e "${yellow}WARNING: Detected issues with your Homebrew installation that could cause ACT3 Login to fail.\n         Run \"brew doctor\" to check your system for potential problems.${normal}"; }
+
 echo "Running brew update..."
-brew update >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
+brew update >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: \"brew update\" failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
 echo "Running brew upgrade..."
-# all_dependencies="docker-credential-helper yq crane git-credential-libsecret direnv act3-pt kubectl"
-brew upgrade >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
+# TODO: can we do this without failing or repeating a later step?
+# all_dependencies="docker-credential-helper yq crane git-credential-libsecret direnv kubectl"
+# for dep in "${all_dependencies[@]}"; do
+#   brew upgrade "$dep" >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: \"brew upgrade $dep\" failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
+# done
+brew upgrade >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: \"brew upgrade\" failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
+
+# DETERMINE IF TERMINAL IS RUNNING IN WSL
+# https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
+IS_WSL=false
+if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
+  echo "${yellow}WSL detected. Using less secure authentication.${normal}"
+  IS_WSL=true
+fi
 
 # Function to install a homebrew dependency
 brew_install () {
-{ brew list "$1" && brew upgrade "$1"; } >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling $1"; brew install "$1" >> "$LOG_FILE"; }
+  # Check if installed: brew list
+  #  If installed, upgrade: brew upgrade
+  #  If not installed, install: brew install
+  { brew list "$1" && brew upgrade "$1"; } >> "$LOG_FILE" 2>&1 || { echo -e "\tInstalling $1"; brew install "$1" >> "$LOG_FILE"; }
+}
+
+# Function to upgrade a homebrew dependency if it is installed
+brew_upgrade () {
+  # Check if installed: brew list
+  #  If installed, upgrade: brew upgrade
+  #  If not installed, return without error
+  { brew list "$1" && brew upgrade "$1"; } >> "$LOG_FILE" 2>&1 || :
 }
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
 echo -e "\n${bold}Create GitLab Personal Access Token${normal}"
 echo -e "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
-echo "2. Create a GitLab Personal Access Token with \"api\" scope"
+echo "2. Create a GitLab Personal Access Token ${bold}with \"api\" scope${normal}"
 echo "3. Enter your GitLab Username and Personal Access Token:"
 read -r -p "       Enter Username>" USERNAME
 read -s -r -p "       Enter Token>" TOKEN
@@ -116,7 +141,17 @@ curl --request POST --header "PRIVATE-TOKEN: $TOKEN" \
 echo -e "\n${bold}Setting up HTTPS credentials for Git access to the ACT3 GitLab instance${normal}"
 
 # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
-if [[ "$OSTYPE" == "linux-gnu" ]] && [[ -z "$WSL_DISTRO_NAME" ]]; then
+# TODO: check current helper so we don't overwrite someone's valid current helper
+# current_helper=$(git config credential.helper)
+if [ "$IS_WSL" == true ]; then
+  echo "Configuring Git to use credential helper \"cache\""
+  echo "${yellow}This will require you to enter your token every 24 hours${normal}"
+
+  git config --global credential.helper 'cache --timeout=86400' >> "$LOG_FILE"
+
+  echo "Storing credentials for the ACT3 GitLab Instance (git.act3-ace.com)"
+  printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git credential-cache store >> "$LOG_FILE"
+elif [[ "$OSTYPE" == "linux-gnu" ]]; then
   echo "Checking for dependencies: git-credential-libsecret"
   brew_install "git-credential-libsecret"
 
@@ -133,7 +168,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
   echo "Storing credentials for the ACT3 GitLab Instance (git.act3-ace.com)"
   printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git credential-osxkeychain store >> "$LOG_FILE"
 
-  [[ $(command -v git) == "/usr/bin/git" ]] || echo "${yellow}WARNING: Your system is using a non-standard installation of git. Use \"/usr/bin/git\" to take advantage of macOS keychain secure credential storage. If you have installed git via Homebrew, run \"brew uninstall git\"${normal}"
+  [[ $(command -v git) == "/usr/bin/git" ]] || echo -e "${yellow}WARNING: Your system is using a non-standard installation of git.\n         Use \"/usr/bin/git\" to take advantage of macOS keychain secure credential storage.\n         If you have installed git via Homebrew, run \"brew uninstall git\"${normal}"
 fi
 
 # GITLAB CONTAINER REGISTRY CREDENTIALS
@@ -151,7 +186,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 	CREDS_STORE="osxkeychain"
 fi
 
-if [[ -z "$WSL_DISTRO_NAME" ]]; then
+if [ "$IS_WSL" != true ]; then
   echo "Configuring registry authentication to use \"$CREDS_STORE\" ($HOME/.docker/config.json)"
   mkdir -p "$HOME/.docker"
   touch -a "$HOME/.docker/config.json" # -a tells touch to only change the "access" and "change" times
@@ -163,7 +198,7 @@ echo "Logging into the ACT3 GitLab Container Registry using Crane (reg.git.act3-
 printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin >> "$LOG_FILE"
 
 # ACE TOOLS HOMEBREW TAP
-echo -e "\n${bold}NETRC Creation (for Golang development)${normal}"
+echo -e "\n${bold}NETRC Creation (for Go development)${normal}"
 
 create_netrc () {
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -216,17 +251,31 @@ echo "Checking for the act3/ace-tools Homebrew Tap... "
 [[ $(brew tap) =~ "act3/ace-tools" ]] || { echo -e "Adding the act3/ace-tools Homebrew Tap"; brew tap act3/ace-tools https://git.act3-ace.com/ace/homebrew-ace-tools.git >> "$LOG_FILE"; }
 echo -e "act3/ace-tools tap added, check available formulas with \"brew search act3/ace-tools\""
 
-echo "Upgrading Homebrew Formulae"
-brew update >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: brew update failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
-brew upgrade >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: brew upgrade failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
+# Upgrade Homebrew Formulae again now that we are authenticated to the ACT3 Homebrew Tap
+echo "Upgrading ACT3 Homebrew Formulae"
+
+# act3_dependencies=("ace-tools" "act3-pt" "act3-pt-beta" "ace-dt" "ace-kubectl-plugins" "ace-helm-plugins")
+
+brew update >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: \"brew update\" failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
+brew_upgrade "ace-tools"
+brew_upgrade "act3-pt"
+brew_upgrade "act3-pt-beta"
+brew_upgrade "ace-dt"
+brew_upgrade "ace-kubectl-plugins"
+brew_upgrade "ace-helm-plugins"
 
 # GITLAB API CREDENTIALS FOR PROJECT TOOL
-if [[ -z "$WSL_DISTRO_NAME" ]]; then
-  echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
-
+echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
+if [ "$IS_WSL" = true ]; then
+  echo -e "${yellow}Add the following line to your \".bashrc\" file to authenticate act3-pt:\n${normal}export ACT3_PT_TOKEN=\"${TOKEN}\""
+else
   # Install act3-pt and log in to git.act3-ace.com
   echo "Checking for act3-pt... "
-  brew_install "act3-pt"
+  if brew list act3-pt-beta >> "$LOG_FILE" 2>&1; then
+    brew_upgrade "act3-pt-beta" # upgrade beta if it is installed
+  else
+    brew_install "act3-pt" # install normally otherwise
+  fi
 
   echo "Logging in with act3-pt"
   printf '%s\n' "$TOKEN" | "$BREW_BIN"/act3-pt login --name act3 --url git.act3-ace.com --token-stdin >> "$LOG_FILE"
