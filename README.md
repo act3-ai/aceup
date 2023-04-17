@@ -5,7 +5,7 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 ## Prerequisites
 
 - ACT3 Active Directory account
-- Linux, macOS, or WSL2 running Ubuntu 22.04
+- Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows only supported through WSL2**)
 - Homebrew installed
 - Git installed
 
@@ -34,6 +34,8 @@ ACT3 Login does the following:
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 ```
+
+> Check [prerequisites](#prerequisites) before running.
 
 ## New User Setup
 
