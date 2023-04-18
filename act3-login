@@ -74,36 +74,14 @@ if 1 command -v brew >/dev/null 2>&1; then
   exit 1
 fi
 
-# Set no auto update for this script
-export HOMEBREW_NO_AUTO_UPDATE=1
-BREW_BIN=$(brew --prefix)/bin
-
 # CHECK IF dev-tools IS INSTALLED AND EXPLAIN HOW TO UNINSTALL
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >>"$LOG_FILE" 2>&1; then
   echo -e "${yellow_excl}${yellow} WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\"${normal}"
 fi
 
-# Check homebrew installation for issues with "brew doctor"
-echo "Checking Homebrew installation:"
-if ! brew doctor >>"$LOG_FILE" 2>&1; then
-  echo -e "${yellow_excl}${yellow} WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
-fi
-
-# Update in case yq/jq/crane/docker-credential-helper are out of date
-echo "Updating Homebrew formulae:"
-echo -e "\tRunning brew update..."
-brew update >>"$LOG_FILE" 2>&1 || : # eat "brew update" failure because it could fail for act3/ace-tools tap
-echo -e "\tRunning brew upgrade..."
-# TODO: can we do this without failing or repeating a later step?
-# all_dependencies="docker-credential-helper yq crane git-credential-libsecret direnv kubectl"
-# for dep in "${all_dependencies[@]}"; do
-#   brew upgrade "$dep" >> "$LOG_FILE" 2>&1 || echo "${yellow}Error: \"brew upgrade $dep\" failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
-# done
-if brew upgrade >>"$LOG_FILE" 2>&1; then
-  echo -e "${green_check} Upgraded Homebrew formulae"
-else
-  echo -e "${yellow_excl}${yellow} Warning: \"brew upgrade\" failed${normal}"
-fi
+# Set no auto update for this script
+export HOMEBREW_NO_AUTO_UPDATE=1
+BREW_BIN=$(brew --prefix)/bin
 
 # Ensures a Homebrew formula is installed
 brew_install() {
@@ -111,12 +89,9 @@ brew_install() {
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
   if brew list "$1" >>"$LOG_FILE" 2>&1; then
+    echo -e "\t${green_check} $1 already installed"
     # Formula is already installed, upgrade it
-    if brew upgrade "$1" >>"$LOG_FILE" 2>&1; then
-      echo -e "\t${green_check} Upgraded ${1}"
-    else
-      echo -e "\t${red_x} Failed to upgrade ${1}. Check logs"
-    fi
+    brew upgrade "$1" >>"$LOG_FILE" 2>&1 || echo -e "\t${red_x} Failed to upgrade ${1}. Check logs"
   # Formula is not installed, install it
   elif brew install "$1" >>"$LOG_FILE"; then
     echo -e "\t${green_check} Installed $1"
@@ -142,6 +117,27 @@ brew_upgrade() {
   # FAILED UPGRADE SHOULD NOT EXIT THE SCRIPT
 }
 
+# Check homebrew installation for issues with "brew doctor"
+echo "Checking Homebrew installation:"
+echo -e "\tRunning \"brew doctor\"..."
+if ! brew doctor >>"$LOG_FILE" 2>&1; then
+  echo -e "${yellow_excl}${yellow} WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
+fi
+
+# Update in case yq/jq/crane/docker-credential-helper are out of date
+echo -e "\tRunning \"brew update\"..."
+brew update >>"$LOG_FILE" 2>&1 || : # eat "brew update" failure because it could fail for act3/ace-tools tap
+echo -e "\tChecking dependencies..."
+public_deps=("yq" "crane")
+for dep in "${public_deps[@]}"; do
+  brew_install "$dep"
+done
+# if brew upgrade >>"$LOG_FILE" 2>&1; then
+#   echo -e "${green_check} Upgraded Homebrew formulae"
+# else
+#   echo -e "${yellow_excl}${yellow} Warning: \"brew upgrade\" failed${normal}"
+# fi
+
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
 echo -e "\n${bold}Create GitLab Personal Access Token${normal}"
@@ -154,9 +150,6 @@ echo ""
 
 # GIT SSH CREDENTIALS
 echo -e "\n${bold}Validating GitLab Personal Access Token${normal}"
-
-echo "Checking for dependencies:"
-brew_install "yq"
 
 token_valid="true"
 
@@ -277,7 +270,8 @@ if [ "$IS_WSL" == true ]; then
     echo "${yellow_excl} Could not store Git HTTPS credentials"
   fi
 elif [[ "$OSTYPE" == "linux-gnu" ]]; then
-  echo "Checking for dependencies:"
+  # Install git-credential-libsecret
+  echo "Installing git-credential-libsecret for secure credential storage:"
   brew_install "git-credential-libsecret"
 
   git config --global credential.helper "libsecret" >>"$LOG_FILE"
@@ -314,18 +308,16 @@ fi
 echo -e "\n${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
 
 # Use yq to add credsStore field to ~/.docker/config.json
-# Use crane to log in to reg.git.act3-ace.com (crane checks login)
-echo -e "Checking for dependencies:"
-brew_install "docker-credential-helper"
-brew_install "yq"
-brew_install "crane"
-
-CREDS_STORE="secretservice"
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  CREDS_STORE="osxkeychain"
-fi
-
+# Use crane to log in to reg.git.act3-ace.com (crane checks login success)
 if [ "$IS_WSL" != true ]; then
+  echo -e "Installing docker-credential-helper for secure credential storage:"
+  brew_install "docker-credential-helper"
+
+  CREDS_STORE="secretservice"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    CREDS_STORE="osxkeychain"
+  fi
+
   mkdir -p "$HOME/.docker"
   touch -a "$HOME/.docker/config.json" # -a tells touch to only change the "access" and "change" times
   "$BREW_BIN"/yq e -i -o=json ".credsStore = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
@@ -336,7 +328,7 @@ fi
 if printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin >>"$LOG_FILE"; then
   echo "${green_check} Logged into the ACT3 GitLab Container Registry (reg.git.act3-ace.com)"
 else
-  echo "${red_x} ${red}Couldn't log into reg.git.act3-ace.com, check logs.${normal}"
+  echo "${red_x}${red} Couldn't log into reg.git.act3-ace.com, check logs.${normal}"
   echo "Aborting."
   exit 1
 fi
@@ -351,8 +343,9 @@ machine git.act3-ace.com
   password $TOKEN
 EOF
     chmod 600 "$HOME/.netrc"
+    echo "${green_check} Created \"$HOME/.netrc\""
   else
-    echo "Checking for dependencies:"
+    echo "Installing direnv:"
     brew_install "direnv"
 
     mkdir -p "$XDG_CONFIG_HOME/direnv"
@@ -395,14 +388,15 @@ echo "Checking for the act3/ace-tools Homebrew Tap..."
   echo -e "Adding the act3/ace-tools Homebrew Tap"
   brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git >>"$LOG_FILE"
 }
-echo -e "act3/ace-tools tap added, check available formulas with \"brew search act3/ace-tools\""
+echo -e "${green_check} Added the act3/ace-tools Tap, check available formulae with \"brew search act3/ace-tools\""
 
 # Upgrade Homebrew Formulae again now that we are authenticated to the ACT3 Homebrew Tap
-echo "Upgrading ACT3 Homebrew Formulae"
+echo "Upgrading ACT3 Homebrew Formulae:"
+
+echo -e "\tRunning brew update..."
+brew update >>"$LOG_FILE" 2>&1 || echo -e "\t${yellow}Error: \"brew update\" failed${normal}"
 
 # act3_dependencies=("ace-tools" "act3-pt" "act3-pt-beta" "ace-dt" "ace-kubectl-plugins" "ace-helm-plugins")
-
-brew update >>"$LOG_FILE" 2>&1 || echo "${yellow}Error: \"brew update\" failed, you may want to run \"brew doctor\" to check your Homebrew installation${normal}"
 brew_upgrade "ace-tools"
 # TODO: standardize on where installs/updates should go
 # brew_upgrade "act3-pt"
@@ -417,7 +411,7 @@ if [ "$IS_WSL" = true ]; then
   echo -e "${yellow}Add the following line to your \".bashrc\" file to authenticate act3-pt:\n${normal}export ACT3_PT_TOKEN=\"${TOKEN}\""
 else
   # Install act3-pt and log in to git.act3-ace.com
-  echo "Checking for act3-pt... "
+  echo "Installing act3-pt to login:"
   if brew list act3-pt-beta >>"$LOG_FILE" 2>&1; then
     brew_upgrade "act3-pt-beta" # upgrade beta if it is installed
   else
@@ -499,16 +493,16 @@ cat <<EOF >"$ACE_HUB_USER_FILE"
 }
 EOF
 echo "${green_check} Created ACE Hub user configuration file ${bold}\"$ACE_HUB_USER_FILE\"${normal}"
-echo "${yellow_excl}${yellow} The file must be imported to ACE Hub to use your credentials.${normal}"
+echo "${yellow_excl}${yellow} This file must be imported to ACE Hub to use your credentials.${normal}"
 
 # CLUSTER ACCESS CONFIGURATION
 echo -e "\n${bold}Set up ACT3 Kubernetes cluster access${normal}"
 
 setup_cluster_access() {
-  echo -e "Checking for dependencies:"
+  echo -e "Installing Kubectl dependencies:"
   brew_install "kubectl"
   brew_install "krew"
-  "$BREW_BIN"/kubectl-krew update || :
+  { "$BREW_BIN"/kubectl-krew update >>"$LOG_FILE" 2>&1 && echo -e "\t${green_check} Updated krew plugin index";} || echo -e "\t${yellow_excl} Couldn't update krew plugin index"
 
   if command -v kubectl-oidc_login >/dev/null 2>&1; then
     "$BREW_BIN"/kubectl-krew upgrade oidc-login >>"$LOG_FILE" 2>&1 || echo -e "\t${green_check} Kubectl plugin oidc-login up-to-date"
@@ -580,11 +574,12 @@ EOF
 
   echo "Creating secret in namespace $USERNAME-workspace:"
   output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" --context lion 2>&1)
-  echo "$output"
   if [[ "$output" == *"already exists"* ]]; then
     echo "${green_check} Secret already exists"
   elif [[ "$output" == *"error"* ]]; then
     echo "${yellow_excl}${yellow} WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${normal}"
+  else
+    echo "${green_check} $output"
   fi
 }
 
