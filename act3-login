@@ -418,8 +418,8 @@ else
     brew_install "act3-pt" # install normally otherwise
   fi
 
-  echo "Logging in with act3-pt"
   printf '%s\n' "$TOKEN" | "$BREW_BIN"/act3-pt login --name act3 --url git.act3-ace.com --token-stdin >>"$LOG_FILE"
+  echo "${green_check} Authenticated act3-pt for the ACT3 GitLab"
 fi
 
 # TELEMETRY SERVER SETUP FOR ACE-DT
