@@ -238,6 +238,7 @@ if output=$(curl -s --request POST --header "PRIVATE-TOKEN: ${TOKEN}" \
   echo "$output" >>"$LOG_FILE"
 
   echo "${green_check} Added SSH key to GitLab account"
+  echo "${yellow_excl} If you have not used an SSH key to access the ACT3 GitLab on this system, you will need to approve the host \"git.act3-ace.com\" the first time you use the SSH key"
 else
   # Log the response no matter what
   echo "$output" >>"$LOG_FILE"
