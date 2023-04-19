@@ -502,7 +502,7 @@ setup_cluster_access() {
   echo -e "Installing Kubectl dependencies:"
   brew_install "kubectl"
   brew_install "krew"
-  { "$BREW_BIN"/kubectl-krew update >>"$LOG_FILE" 2>&1 && echo -e "\t${green_check} Updated krew plugin index";} || echo -e "\t${yellow_excl} Couldn't update krew plugin index"
+  { "$BREW_BIN"/kubectl-krew update >>"$LOG_FILE" 2>&1 && echo -e "\t${green_check} Updated krew plugin index"; } || echo -e "\t${yellow_excl} Couldn't update krew plugin index"
 
   if command -v kubectl-oidc_login >/dev/null 2>&1; then
     "$BREW_BIN"/kubectl-krew upgrade oidc-login >>"$LOG_FILE" 2>&1 || echo -e "\t${green_check} Kubectl plugin oidc-login up-to-date"
@@ -573,13 +573,15 @@ EOF
   echo "${green_check} Merged cluster configuration into \"$HOME/.kube/config\"."
 
   echo "Creating secret in namespace $USERNAME-workspace:"
-  output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" --context lion 2>&1)
-  if [[ "$output" == *"already exists"* ]]; then
-    echo "${green_check} Secret already exists"
-  elif [[ "$output" == *"error"* ]]; then
-    echo "${yellow_excl}${yellow} WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${normal}"
-  else
+
+  if output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" --context lion 2>&1); then
     echo "${green_check} $output"
+  else
+    if [[ "$output" == *"already exists"* ]]; then
+      echo "${green_check} Secret already exists"
+    else
+      echo "${yellow_excl}${yellow} WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${normal}"
+    fi
   fi
 }
 
@@ -587,7 +589,7 @@ echo "Existing cluster configuration will be backed up before creating a new con
 read -r -p "Do you wish to proceed?
 (y/n)>" yn
 case $yn in
-[Yy]*) setup_cluster_access ;;
+[Yy]*) setup_cluster_access || : ;; # don't fail here
 *) echo "Skipping cluster access setup" ;;
 esac
 
