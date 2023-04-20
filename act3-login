@@ -14,7 +14,6 @@ red=$(tput setaf 1)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
-cyan=$(tput setaf 6)
 green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
@@ -215,7 +214,7 @@ if [ -f "$ssh_key" ] || [ -f "$ssh_key.pub" ]; then
 fi
 
 # Generate SSH Key
-ssh-keygen -f "$ssh_key" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $timestamp)" -N "" -q
+ssh-keygen -f "$ssh_key" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $readable_timestamp)" -N "" -q
 echo -e "${green_check} Generated SSH key pair\nPrivate key: $ssh_key\nPublic key: $ssh_key.pub"
 #TODO: make a passphrase, use ssh-add to add key to the agent, provide the agent with the passphrase, store the passphrase in the system keychain
 # on mac:
@@ -227,7 +226,7 @@ echo -e "${green_check} Generated SSH key pair\nPrivate key: $ssh_key\nPublic ke
 
 # Add public key to GitLab user
 if output=$(curl -s --request POST --header "PRIVATE-TOKEN: ${TOKEN}" \
-  --form "title=Key for $(hostname) (created by ACT3 Login ${timestamp})" \
+  --form "title=Key for $(hostname) (created by ACT3 Login ${readable_timestamp})" \
   --form "key=$(cat "$ssh_key.pub")" \
   "https://git.act3-ace.com/api/v4/user/keys"); then
   # Log the response no matter what
