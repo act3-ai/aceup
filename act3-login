@@ -13,18 +13,20 @@ normal=$(tput sgr0)
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
+cyan=$(tput setaf 6)
 green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
 
-echo '
+echo "$blue"'
           _____ _______ ____      _      ____   _____ _____ _   _ 
     /\   / ____|__   __|___ \    | |    / __ \ / ____|_   _| \ | |
    /  \ | |       | |    __) |   | |   |_|  | | |  __  | | |  \| |
   / /\ \| |       | |   |__ <    | |   _____|_| | |_ | | | | . ` |
  / ____ \ |____   | |   ___) |   | |___|______| |__| |_| |_| |\  |
 /_/    \_\_____|  |_|  |____/    |_____|______|\_____|_____|_| \_|
-'
+'"$normal"
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
@@ -57,7 +59,8 @@ else
 fi
 
 # Create log file
-timestamp=$(date "+%Y-%m-%d_%H-%M-%S")
+readable_timestamp=$(date "+%D %T")
+timestamp=$(date +%s)
 LOG_FILE="$XDG_CACHE_HOME/act3/login/logs_$timestamp"
 mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$LOG_FILE"
 echo "${green_check} Created log file: $LOG_FILE"
@@ -89,14 +92,14 @@ brew_install() {
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
   if brew list "$1" >>"$LOG_FILE" 2>&1; then
-    echo -e "\t${green_check} $1 already installed"
+    echo -e "$2${green_check} $1 already installed"
     # Formula is already installed, upgrade it
-    brew upgrade "$1" >>"$LOG_FILE" 2>&1 || echo -e "\t${red_x} Failed to upgrade ${1}. Check logs"
+    brew upgrade "$1" >>"$LOG_FILE" 2>&1 || echo -e "\t${red_x} Failed to upgrade $1. Check logs"
   # Formula is not installed, install it
   elif brew install "$1" >>"$LOG_FILE"; then
-    echo -e "\t${green_check} Installed $1"
+    echo -e "$2${green_check} Installed $1"
   else
-    echo -e "\t${red_x} Failed to install ${1}. Check logs"
+    echo -e "$2${red_x} Failed to install ${1}. Check logs"
     exit 1 # Fail if dependency cannot be met
   fi
 }
@@ -109,9 +112,9 @@ brew_upgrade() {
   if brew list "$1" >>"$LOG_FILE" 2>&1; then
     # Formula is already installed, upgrade it
     if brew upgrade "$1" >>"$LOG_FILE" 2>&1; then
-      echo -e "\t${green_check} Upgraded ${1}"
+      echo -e "$2${green_check} Upgraded ${1}"
     else
-      echo -e "\t${red_x} Failed to upgrade ${1}. Check logs"
+      echo -e "$2${red_x} Failed to upgrade ${1}. Check logs"
     fi
   fi
   # FAILED UPGRADE SHOULD NOT EXIT THE SCRIPT
@@ -119,24 +122,18 @@ brew_upgrade() {
 
 # Check homebrew installation for issues with "brew doctor"
 echo "Checking Homebrew installation:"
-echo -e "\tRunning \"brew doctor\"..."
-if ! brew doctor >>"$LOG_FILE" 2>&1; then
-  echo -e "${yellow_excl}${yellow} WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
+echo -e -n "\tRunning \"brew doctor\"... "
+if brew doctor >>"$LOG_FILE" 2>&1; then
+  echo -e "$green_check"
+else
+  echo -e "${red_x}\n\t${yellow_excl}${yellow} WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
 fi
 
 # Update in case yq/jq/crane/docker-credential-helper are out of date
-echo -e "\tRunning \"brew update\"..."
-brew update >>"$LOG_FILE" 2>&1 || : # eat "brew update" failure because it could fail for act3/ace-tools tap
-echo -e "\tChecking dependencies..."
-public_deps=("yq" "crane")
-for dep in "${public_deps[@]}"; do
-  brew_install "$dep"
-done
-# if brew upgrade >>"$LOG_FILE" 2>&1; then
-#   echo -e "${green_check} Upgraded Homebrew formulae"
-# else
-#   echo -e "${yellow_excl}${yellow} Warning: \"brew upgrade\" failed${normal}"
-# fi
+echo -e -n "\tRunning \"brew update\"... "
+brew update >>"$LOG_FILE" 2>&1 && echo "$green_check" || echo "$yellow Non-fatal error" # eat "brew update" failure because it could fail for act3/ace-tools tap
+echo -e -n "\tInstalling yq for config edits... "
+brew_install "yq"
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
@@ -203,24 +200,23 @@ fi
 # GIT SSH CREDENTIALS
 echo -e "\n${bold}Setting up Git SSH credentials for the ACT3 GitLab${normal}"
 
-# back up existing private key file
-if [ -f "$HOME/.ssh/act3_ecdsa" ]; then
-  backup="$HOME/.ssh/act3_ecdsa.bak-$(date +%s)"
-  mv "$HOME/.ssh/act3_ecdsa" "$backup"
-  echo "${green_check} Backed up existing private key to $backup"
-fi
+ssh_key="$HOME/.ssh/act3_ecdsa"
 
-# back up existing public key file
-if [ -f "$HOME/.ssh/act3_ecdsa.pub" ]; then
-  backup="$HOME/.ssh/act3_ecdsa.pub.bak-$(date +%s)"
-  mv "$HOME/.ssh/act3_ecdsa.pub" "$backup"
-  echo "${green_check} Backed up existing public key to $backup"
+# back up existing private key file
+if [ -f "$ssh_key" ] || [ -f "$ssh_key.pub" ]; then
+  echo "Backing up existing keys:"
+  backup="$ssh_key.bak-$timestamp"
+  if mv "$ssh_key" "$backup"; then
+    echo -e "\t${green_check} Private key backup: $backup"
+  fi
+  if mv "$ssh_key.pub" "$backup.pub"; then
+    echo -e "\t${green_check} Public key backup: $backup"
+  fi
 fi
 
 # Generate SSH Key
-ssh_key="$HOME/.ssh/act3_ecdsa"
 ssh-keygen -f "$ssh_key" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $timestamp)" -N "" -q
-echo "${green_check} Generated SSH key $ssh_key"
+echo -e "${green_check} Generated SSH key pair\nPrivate key: $ssh_key\nPublic key: $ssh_key.pub"
 #TODO: make a passphrase, use ssh-add to add key to the agent, provide the agent with the passphrase, store the passphrase in the system keychain
 # on mac:
 # WARNING: The -K and -A flags are deprecated and have been replaced
@@ -237,19 +233,41 @@ if output=$(curl -s --request POST --header "PRIVATE-TOKEN: ${TOKEN}" \
   # Log the response no matter what
   echo "$output" >>"$LOG_FILE"
 
-  echo "${green_check} Added SSH key to GitLab account"
-  echo "${yellow_excl} If you have not used an SSH key to access the ACT3 GitLab on this system, you will need to approve the host \"git.act3-ace.com\" the first time you use the SSH key"
+  echo "${green_check} Added public key to GitLab account"
 else
   # Log the response no matter what
   echo "$output" >>"$LOG_FILE"
 
-  echo "${red_x} Couldn't add SSH key to GitLab account"
+  echo "${red_x} Couldn't add public key to GitLab account"
 
   # Print the response's "message" field if it exists
   message=$(echo "$output" | yq '.message' || echo "null")
   if ! [ "$message" = "null" ]; then
     echo -e "\tgit.act3-ace.com responded with: ${message}"
   fi
+fi
+
+# ADD SERVER SSH PUBLIC KEYS TO KNOWN HOSTS FILE
+
+# TODO: Should this use the -H flag?:
+# Hash all hostnames and addresses in the output.
+# Hashed names may be used normally by ssh(1) and sshd(8),
+# but they do not reveal identifying information should the file's contents be disclosed.
+# TODO: Look into this example from "man ssh-keyscan"
+# Find all hosts from the file ssh_hosts which have new or different keys from those in the sorted file ssh_known_hosts:
+# $ ssh-keyscan -t rsa,dsa,ecdsa,ed25519 -f ssh_hosts | \
+#      sort -u - ssh_known_hosts | diff ssh_known_hosts -
+if fingerprints=$(ssh-keyscan git.act3-ace.com 2>"$LOG_FILE"); then
+  echo "${green_check} Gathered public keys from git.act3-ace.com"
+  # Remove existing fingerprints to avoid duplicates
+  if ! ssh-keygen -R git.act3-ace.com >>"$LOG_FILE" 2>&1; then
+    echo "${yellow_excl} Could not remove existing public keys for git.act3-ace.com"
+  fi
+  echo "$fingerprints" >>"$LOG_FILE"              # log the found fingerprints
+  echo "$fingerprints" >>"$HOME/.ssh/known_hosts" # store the found fingerprints in ~/.ssh/known_hosts
+  echo "${green_check} Stored public keys for git.act3-ace.com in $HOME/.ssh/known_hosts"
+else
+  echo "${yellow_excl} Could not gather public keys from git.act3-ace.com"
 fi
 
 # GIT HTTPS CREDENTIALS
@@ -308,10 +326,13 @@ fi
 # GITLAB CONTAINER REGISTRY CREDENTIALS
 echo -e "\n${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
 
-# Use yq to add credsStore field to ~/.docker/config.json
 # Use crane to log in to reg.git.act3-ace.com (crane checks login success)
+echo -e -n "Installing crane to log into the registry... "
+brew_install "crane"
+
+# Use yq to add credsStore field to ~/.docker/config.json
 if [ "$IS_WSL" != true ]; then
-  echo -e "Installing docker-credential-helper for secure credential storage:"
+  echo -e -n "Installing docker-credential-helper for secure credential storage... "
   brew_install "docker-credential-helper"
 
   CREDS_STORE="secretservice"
@@ -346,7 +367,7 @@ EOF
     chmod 600 "$HOME/.netrc"
     echo "${green_check} Created \"$HOME/.netrc\""
   else
-    echo "Installing direnv:"
+    echo -n "Installing direnv... "
     brew_install "direnv"
 
     mkdir -p "$XDG_CONFIG_HOME/direnv"
@@ -384,27 +405,23 @@ esac
 echo -e "\n${bold}Setting up the ACE Tools Homebrew Tap${normal}"
 
 # Tap act3/ace-tools if not already tapped
-echo "Checking for the act3/ace-tools Homebrew Tap..."
-[[ $(brew tap) =~ "act3/ace-tools" ]] || {
-  echo -e "Adding the act3/ace-tools Homebrew Tap"
+if [[ $(brew tap) =~ "act3/ace-tools" ]]; then
+  echo "${green_check} act3/ace-tools is already tapped"
+else
   brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git >>"$LOG_FILE"
-}
-echo -e "${green_check} Added the act3/ace-tools Tap, check available formulae with \"brew search act3/ace-tools\""
+  echo "${green_check} Added the act3/ace-tools Tap"
+fi
 
 # Upgrade Homebrew Formulae again now that we are authenticated to the ACT3 Homebrew Tap
 echo "Upgrading ACT3 Homebrew Formulae:"
 
-echo -e "\tRunning brew update..."
-brew update >>"$LOG_FILE" 2>&1 || echo -e "\t${yellow}Error: \"brew update\" failed${normal}"
+echo -e -n "\tRunning brew update... "
+brew update >>"$LOG_FILE" 2>&1 && echo "$green_check" || echo -e "${red_x}\n\t${yellow}Error: \"brew update\" failed${normal}"
 
-# act3_dependencies=("ace-tools" "act3-pt" "act3-pt-beta" "ace-dt" "ace-kubectl-plugins" "ace-helm-plugins")
-brew_upgrade "ace-tools"
-# TODO: standardize on where installs/updates should go
-# brew_upgrade "act3-pt"
-# brew_upgrade "act3-pt-beta"
-brew_upgrade "ace-dt"
-brew_upgrade "ace-kubectl-plugins"
-brew_upgrade "ace-helm-plugins"
+# Give some info on the tap
+echo -e "\n${bold}The act3/ace-tools Tap is the home for ACT3 software${normal}"
+echo "  - Install common tools with: ${bold}brew install ace-tools${normal}"
+echo "  - List all available formulae with ${bold}brew search act3/ace-tools${normal}"
 
 # GITLAB API CREDENTIALS FOR PROJECT TOOL
 echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
@@ -412,7 +429,7 @@ if [ "$IS_WSL" = true ]; then
   echo -e "${yellow}Add the following line to your \".bashrc\" file to authenticate act3-pt:\n${normal}export ACT3_PT_TOKEN=\"${TOKEN}\""
 else
   # Install act3-pt and log in to git.act3-ace.com
-  echo "Installing act3-pt to login:"
+  echo -n "Installing act3-pt to login... "
   if brew list act3-pt-beta >>"$LOG_FILE" 2>&1; then
     brew_upgrade "act3-pt-beta" # upgrade beta if it is installed
   else
@@ -500,16 +517,23 @@ echo "${yellow_excl}${yellow} This file must be imported to ACE Hub to use your 
 echo -e "\n${bold}Set up ACT3 Kubernetes cluster access${normal}"
 
 setup_cluster_access() {
-  echo -e "Installing Kubectl dependencies:"
+  echo -n "Installing Kubectl for cluster access... "
   brew_install "kubectl"
+  echo -n "Installing the Kubectl plugin manager Krew... "
   brew_install "krew"
-  { "$BREW_BIN"/kubectl-krew update >>"$LOG_FILE" 2>&1 && echo -e "\t${green_check} Updated krew plugin index"; } || echo -e "\t${yellow_excl} Couldn't update krew plugin index"
+  echo -n "Updating Krew's plugin index... "
+  { "$BREW_BIN"/kubectl-krew update >>"$LOG_FILE" 2>&1 && echo "$green_check"; } || echo -e "$red_x\n\t${yellow_excl} Couldn't update krew plugin index"
 
+  echo -n "Installing the Kubectl OIDC plugin for cluster authentication... "
   if command -v kubectl-oidc_login >/dev/null 2>&1; then
-    "$BREW_BIN"/kubectl-krew upgrade oidc-login >>"$LOG_FILE" 2>&1 || echo -e "\t${green_check} Kubectl plugin oidc-login up-to-date"
+    echo -e "${green_check} oidc-login already installed"
+    "$BREW_BIN"/kubectl-krew upgrade oidc-login >>"$LOG_FILE" 2>&1 || :
   else
-    "$BREW_BIN"/kubectl-krew install oidc-login >>"$LOG_FILE" 2>&1
-    echo -e "\t${green_check} Installed oidc-login Kubectl plugin"
+    if "$BREW_BIN"/kubectl-krew install oidc-login >>"$LOG_FILE" 2>&1; then
+      echo -e "${green_check} Installed oidc-login"
+    else
+      echo -e "${red_x} Failed to install oidc-login. Check logs"
+    fi
   fi
 
   CLUSTERCONFIG="$HOME/.kube/act3.yaml"
@@ -573,13 +597,11 @@ EOF
   KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$BREW_BIN"/kubectl config view --raw >~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
   echo "${green_check} Merged cluster configuration into \"$HOME/.kube/config\"."
 
-  echo "Creating secret in namespace $USERNAME-workspace:"
-
   if output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" --context lion 2>&1); then
     echo "${green_check} $output"
   else
     if [[ "$output" == *"already exists"* ]]; then
-      echo "${green_check} Secret already exists"
+      echo "${green_check} Secret \"act3\" already created in namespace $USERNAME-workspace"
     else
       echo "${yellow_excl}${yellow} WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${normal}"
     fi
