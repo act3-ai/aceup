@@ -9,7 +9,6 @@
 ############################################################
 ############################################################
 
-
 ############################################################
 # Global setup                                             #
 ############################################################
@@ -32,7 +31,6 @@ green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
 
-
 ############################################################
 # Preparation                                              #
 ############################################################
@@ -48,7 +46,6 @@ echo "$blue"'
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
-
 ############################################################
 # Verify Prerequisites                                     #
 ############################################################
@@ -56,20 +53,20 @@ echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's
 echo -e "\n${bold}Checking prerequisites${normal}"
 
 system_check() {
-# Default XDG directories used in the script
-echo -n "Checking OS type... "
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-  echo "${green_check} Detected OS type Linux"
-  # DETERMINE IF TERMINAL IS RUNNING IN WSL
-  # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
-  if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
-    echo "${green_check} Detected Windows Subsystem for Linux (WSL) installation"
+  # Default XDG directories used in the script
+  echo -n "Checking OS type... "
+  if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    echo "${green_check} Detected OS type Linux"
+    # DETERMINE IF TERMINAL IS RUNNING IN WSL
+    # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
+    if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
+      echo "${green_check} Detected Windows Subsystem for Linux (WSL) installation"
+    fi
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "${green_check} Detected OS type macOS"
+  else
+    echo "${yellow}! WARNING: Unsupported OS type \"${OSTYPE}\"${normal}"
   fi
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "${green_check} Detected OS type macOS"
-else
-  echo "${yellow}! WARNING: Unsupported OS type \"${OSTYPE}\"${normal}"
-fi
 }
 
 validate_git() {
@@ -154,7 +151,6 @@ brew_install() {
   fi
 }
 
-
 ############################################################
 # Username/Token entry                                     #
 ############################################################
@@ -230,14 +226,16 @@ if ! [ $token_valid = "true" ]; then
 fi
 
 # HAND OFF TO PRIVATE SCRIPT
-echo -e "${bold}Hand off to private ACT3 Login program${normal}"
+echo
+echo "${bold}Handing off to private ACT3 Login script${normal}"
 if private_script=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
   echo "${green_check} Downloaded the private script"
-  echo "Handing off... "
+  echo "Starting the private script... "
   echo
   # no error handling for this, exit as it exits
-  printf '%s:%s\n' "$USERNAME" "$TOKEN" | /usr/bin/env bash -c "$private_script"
+  # printf '%s:%s\n' "$USERNAME" "$TOKEN" | /usr/bin/env bash -c "$private_script"
+  /usr/bin/env bash -c "$private_script" "$(printf '%s' "$USERNAME")" "$(printf '%s' "$TOKEN")"
 else
   echo "${red_x} Couldn't download the private script"
   echo -e "\tGitLab responded with:\n\t$private_script"
