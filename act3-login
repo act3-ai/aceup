@@ -259,7 +259,9 @@ fi
 if fingerprints=$(ssh-keyscan git.act3-ace.com 2>"$LOG_FILE"); then
   echo "${green_check} Gathered public keys from git.act3-ace.com"
   # Remove existing fingerprints to avoid duplicates
-  if ! ssh-keygen -R git.act3-ace.com >>"$LOG_FILE" 2>&1; then
+  if output=$(ssh-keygen -R git.act3-ace.com >>"$LOG_FILE" 2>&1); then
+    echo "${green_check} Backed up existing known_hosts file to $HOME/.ssh/known_hosts.old"
+  else
     echo "${yellow_excl} Could not remove existing public keys for git.act3-ace.com"
   fi
   echo "$fingerprints" >>"$LOG_FILE"              # log the found fingerprints
