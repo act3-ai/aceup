@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
 
+# PUBLIC VERSION
+
+setup() {
+  # Have command error out on any command failure
+  set -e
+
+  # Initialize text formatting shortcuts
+  bold=$(tput bold)
+  normal=$(tput sgr0)
+  red=$(tput setaf 1)
+  green=$(tput setaf 2)
+  yellow=$(tput setaf 3)
+  blue=$(tput setaf 4)
+  green_check="${green}✓${normal}"
+  yellow_excl="${yellow}!${normal}"
+  red_x="${red}✗${normal}"
+}
+
 # To run: /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 
-#TODO: add DoD certificate installation
-
-# Have command error out on any command failure
-set -e
-
-# Initialize text formatting shortcuts
-bold=$(tput bold)
-normal=$(tput sgr0)
-red=$(tput setaf 1)
-green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-green_check="${green}✓${normal}"
-yellow_excl="${yellow}!${normal}"
-red_x="${red}✗${normal}"
+setup
 
 echo "$blue"'
           _____ _______ ____      _      ____   _____ _____ _   _ 
@@ -195,6 +199,18 @@ if ! [ $token_valid = "true" ]; then
   echo "Aborting."
   exit 1
 fi
+
+# TODO: branch to private here
+https://git.act3-ace.com/ace/aceup/-/raw/main/act3-login
+if private_script=$(curl --header "PRIVATE-TOKEN: <your_access_token>" \
+  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login/raw?ref=main"); then
+  echo "Switching to private script to log in"
+else 
+  echo "Couldn't get private script, aborting."
+  exit 1
+fi
+
+printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git credential-cache store >>"$LOG_FILE"
 
 # GIT SSH CREDENTIALS
 echo -e "\n${bold}Setting up Git SSH credentials for the ACT3 GitLab${normal}"
