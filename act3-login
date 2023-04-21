@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 
-# To run: /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+############################################################
+############################################################
+# This is the private component of the ACT3 Login Script
+# The username and token are read from stdin
+#  as a colon-separated pair:
+# printf '%s:%s\n' "$USERNAME" "$TOKEN" | act3-login-private
+############################################################
+############################################################
+
 
 ############################################################
-# Script setup steps                                       #
+# Global setup                                             #
 ############################################################
 
 # Have command error out on any command failure
@@ -24,6 +32,11 @@ green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
 
+
+############################################################
+# Preparation                                              #
+############################################################
+
 echo "$blue"'
           _____ _______ ____      _      ____   _____ _____ _   _ 
     /\   / ____|__   __|___ \    | |    / __ \ / ____|_   _| \ | |
@@ -35,9 +48,14 @@ echo "$blue"'
 
 echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
-echo -e "\n${bold}Checking system prerequisites${normal}"
 
-# SYSTEM CHECK
+############################################################
+# Verify Prerequisites                                     #
+############################################################
+
+echo -e "\n${bold}Checking prerequisites${normal}"
+
+system_check() {
 # Default XDG directories used in the script
 echo -n "Checking OS type... "
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -52,6 +70,23 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 else
   echo "${yellow}! WARNING: Unsupported OS type \"${OSTYPE}\"${normal}"
 fi
+}
+
+validate_git() {
+  echo -n "Checking for Git... "
+  if command -v git >/dev/null 2>&1; then
+    echo "${green_check} Git is installed"
+  else
+    echo "${red_x}${red} Git not installed, ACT3 Login requires Git.${normal}"
+    echo
+    echo "Install Git by following the instructions for your system:"
+    echo
+    echo "https://git-scm.com/"
+    echo
+    echo "Aborting."
+    exit 1
+  fi
+}
 
 validate_homebrew() {
   # FAIL IF HOMEBREW IS NOT INSTALLED
@@ -72,7 +107,7 @@ validate_homebrew() {
   # Check homebrew installation for issues with "brew doctor"
   echo -n "Running \"brew doctor\"... "
   if brew doctor >/dev/null 2>&1; then
-    echo "$green_check"
+    echo "$green_check Passed"
   else
     echo "${red_x}"
     echo "${yellow}! WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
@@ -81,8 +116,12 @@ validate_homebrew() {
   # Update Homebrew's catalog so the latest verison of dependencies are installed
   echo -n "Running \"brew update\"... "
   # eat "brew update" failure because it could fail for act3/ace-tools tap
-  brew update >/dev/null 2>&1 && echo "$green_check" || echo "$yellow Non-fatal error"
+  brew update >/dev/null 2>&1 && echo "${green_check} " || echo "${yellow}! Non-fatal error${normal}"
 }
+
+system_check
+validate_git
+validate_homebrew
 
 # CHECK IF dev-tools IS INSTALLED AND EXPLAIN HOW TO UNINSTALL
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >/dev/null 2>&1; then
@@ -115,20 +154,36 @@ brew_install() {
   fi
 }
 
+
+############################################################
+# Username/Token entry                                     #
+############################################################
+
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
-echo -e "\n${bold}Create GitLab Personal Access Token${normal}"
-echo -e "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
-echo "2. Create a GitLab Personal Access Token ${bold}with \"api\" scope${normal}"
-echo "3. Enter your GitLab Username and Personal Access Token:"
-read -r -p "       Enter Username>" USERNAME
-read -s -r -p "       Enter Token>" TOKEN
-echo ""
+echo
+echo "${bold}Find your GitLab Username${normal}"
+echo "1. Navigate to ${bold}https://git.act3-ace.com${normal}"
+echo "2. Click your profile icon in the top right corner"
+echo "3. Your GitLab Username is shown below your name after an \"@\" symbol"
+echo -e "\tex: \"@jdoe\", username is \"jdoe\""
+echo
+echo "${bold}Create a GitLab Personal Access Token${normal}"
+echo "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
+echo "2. Give the token an identifiable name"
+echo "3. Under \"scopes\", check the \"${bold}api${normal}\" box (leave all others unchecked)"
+echo "4. Create the token by clicking \"Create personal access token\""
+echo "5. Copy the token to your clipboard from the \"Your new personal access token\" box"
+echo
+echo "${bold}Enter your GitLab username and a Personal Access Token:${normal}"
+read -r -p "Enter Username>" USERNAME
+read -s -r -p "Enter Token>" TOKEN
+echo
 
 # GIT SSH CREDENTIALS
 echo -e "\n${bold}Validating GitLab Personal Access Token${normal}"
 
-echo -e -n "Installing yq to read response... "
+echo -e -n "Installing yq to check response... "
 brew_install "yq"
 
 token_valid="true"
@@ -180,6 +235,7 @@ if private_script=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOK
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
   echo "${green_check} Downloaded the private script"
   echo "Handing off... "
+  echo
   # no error handling for this, exit as it exits
   printf '%s:%s\n' "$USERNAME" "$TOKEN" | /usr/bin/env bash -c "$private_script"
 else
