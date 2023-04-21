@@ -215,7 +215,7 @@ fi
 
 # Generate SSH Key
 ssh-keygen -f "$ssh_key" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $readable_timestamp)" -N "" -q
-echo -e "${green_check} Generated SSH key pair\nPrivate key: $ssh_key\nPublic key: $ssh_key.pub"
+echo -e "${green_check} Generated SSH key pair\n\tPrivate key: $ssh_key\n\tPublic key: $ssh_key.pub"
 #TODO: make a passphrase, use ssh-add to add key to the agent, provide the agent with the passphrase, store the passphrase in the system keychain
 # on mac:
 # WARNING: The -K and -A flags are deprecated and have been replaced
