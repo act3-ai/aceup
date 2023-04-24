@@ -31,6 +31,26 @@ green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
 
+success() {
+  echo "${green_check} ${1}"
+}
+
+warning() {
+  echo "${yellow_excl} ${1}"
+}
+
+warning_yellow() {
+  echo "${yellow_excl}${yellow} ${1}${normal}"
+}
+
+failure() {
+  echo "${red_x} ${1}"
+}
+
+failure_red() {
+  echo "${red_x}${red} ${1}${normal}"
+}
+
 ############################################################
 # Preparation                                              #
 ############################################################
@@ -68,7 +88,7 @@ system_check() {
     echo "${green_check} Detected OS type macOS"
     XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
   else
-    echo "${yellow}! WARNING: Unsupported OS type \"${OSTYPE}\"${normal}"
+    warning_yellow "WARNING: Unsupported OS type \"${OSTYPE}\""
     XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
   fi
 }
@@ -76,9 +96,9 @@ system_check() {
 validate_git() {
   echo -n "Checking for Git... "
   if command -v git >/dev/null 2>&1; then
-    echo "${green_check} Git is installed"
+    success "Git is installed"
   else
-    echo "${red_x}${red} Git not installed, ACT3 Login requires Git.${normal}"
+    failure_red "Git not installed, ACT3 Login requires Git."
     echo
     echo "Install Git by following the instructions for your system:"
     echo
@@ -93,9 +113,9 @@ validate_homebrew() {
   # FAIL IF HOMEBREW IS NOT INSTALLED
   echo -n "Checking for Homebrew... "
   if command -v brew >/dev/null 2>&1; then
-    echo "${green_check} Homebrew is installed"
+    success "Homebrew is installed"
   else
-    echo "${red_x}${red} Homebrew not installed, ACT3 Login requires Homebrew.${normal}"
+    failure_red "Homebrew not installed, ACT3 Login requires Homebrew."
     echo
     echo "Install Homebrew with the following command (from https://brew.sh/):"
     echo
@@ -117,7 +137,7 @@ validate_homebrew() {
   # Update Homebrew's catalog so the latest verison of dependencies are installed
   echo -n "Running \"brew update\"... "
   # eat "brew update" failure because it could fail for act3/ace-tools tap
-  brew update >/dev/null 2>&1 && echo "${green_check} " || echo "${yellow}! Non-fatal error${normal}"
+  brew update >/dev/null 2>&1 && echo "$green_check" || echo "${yellow}! Non-fatal error${normal}"
 }
 
 system_check
@@ -135,15 +155,15 @@ brew_install() {
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
   if brew list "$1" >/dev/null 2>&1; then
-    echo "${green_check} $1 already installed"
+    success "$1 already installed"
     # Formula is already installed, upgrade it
-    brew upgrade "$1" >/dev/null 2>&1 || echo "${yellow_excl} Could not upgrade ${1}."
+    brew upgrade "$1" >/dev/null 2>&1 || warning "Could not upgrade ${1}."
   else
     # Formula is not installed, install it
     if output=$(brew install "$1" 2>&1); then
-      echo "${green_check} Installed $1"
+      success "Installed $1"
     else
-      echo "${red_x}${red} Failed to install required dependency ${1}.${normal}"
+      failure_red "Failed to install required dependency ${1}."
       echo
       echo "Output of \"brew install ${1}\":"
       echo
@@ -185,13 +205,13 @@ echo
 ############################################################
 
 if [ "$USERNAME" = "" ]; then
-  echo "${red_x}${red} Empty input for username.${normal}"
+  failure_red "Empty input for username."
   echo "Aborting."
   exit 1
 fi
 
 if [ "$TOKEN" = "" ]; then
-  echo "${red_x}${red} Empty input for token.${normal}"
+  failure_red "Empty input for token."
   echo "Aborting."
   exit 1
 fi
@@ -207,42 +227,42 @@ token_valid="true"
 if output=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
   token_name=$(echo "$output" | yq '.name')
-  echo "${green_check} GitLab has token \"${token_name}\""
+  success "GitLab has token \"${token_name}\""
 
   if [[ $(echo "$output" | yq '.revoked') == "true" ]]; then
-    echo "${red_x} Token has been revoked"
+    failure "Token has been revoked"
     token_valid="false"
   fi
 
   if [[ $(echo "$output" | yq '.active') != "true" ]]; then
-    echo "${red_x} Token is inactive"
+    failure "Token is inactive"
     token_valid="false"
   fi
 
   # Check token_valid to confirm token is active and not revoked
   # Done this way to combine a successful revoked/active check into one print
-  [ $token_valid = "true" ] && echo "${green_check} Token is active"
+  [ $token_valid = "true" ] && success "Token is active"
 
   if [[ $(echo "$output" | yq 'contains({"scopes": [ "api" ]})') != "true" ]]; then
     # ex: registry scope triggers registry login
     # ex: repository scope triggers git credential setup
-    echo "${red_x} Token does not have required \"api\" scope"
+    failure "Token does not have required \"api\" scope"
     token_valid="false"
   else
-    echo "${green_check} Token has \"api\" scope"
+    success "Token has \"api\" scope"
   fi
 else
   token_valid="false"
 
   # Log the response no matter what
-  echo "${red_x} Token not found on GitLab"
+  failure "Token not found on GitLab"
   echo
   echo "GitLab responded with:"
   echo "$output"
 fi
 
 if ! [ $token_valid = "true" ]; then
-  echo "${red_x}${red} Token failed validation, check logs.${normal}"
+  failure_red "Token failed validation, check logs."
   echo "Aborting."
   exit 1
 fi
@@ -256,19 +276,19 @@ echo "${bold}Handing off to private ACT3 Login script${normal}"
 
 if output=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
-  echo "${green_check} Downloaded the private script"
+  success "Downloaded the private script"
 
   PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script_$(date +%s)"
   mkdir -p "$XDG_CACHE_HOME/act3/login-private" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
   echo "$output" > "$PRIVATE_SCRIPT"
-  echo "${green_check} Stored to $PRIVATE_SCRIPT"
+  success "Stored to $PRIVATE_SCRIPT"
   
   echo "Starting the private script... "
   echo
   # no error handling for this, exit as it exits
   "$PRIVATE_SCRIPT" -u "$(printf '%s' "$USERNAME")" -t "$(printf '%s' "$TOKEN")"
 else
-  echo "${red_x} Couldn't download the private script"
+  failure "Couldn't download the private script"
   echo
   echo "GitLab responded with:"
   echo "$output"
