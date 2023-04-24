@@ -44,13 +44,14 @@ echo "$blue"'
 /_/    \_\_____|  |_|  |____/    |_____|______|\_____|_____|_| \_|
 '"$normal"
 
-echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
+echo "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
 ############################################################
 # Verify Prerequisites                                     #
 ############################################################
 
-echo -e "\n${bold}Checking prerequisites${normal}"
+echo
+echo "${bold}Checking prerequisites${normal}"
 
 system_check() {
   # Default XDG directories used in the script
@@ -133,7 +134,7 @@ brew_install() {
   if brew list "$1" >/dev/null 2>&1; then
     echo "${green_check} $1 already installed"
     # Formula is already installed, upgrade it
-    brew upgrade "$1" >/dev/null 2>&1 || echo -e "${yellow_excl} Could not upgrade $1."
+    brew upgrade "$1" >/dev/null 2>&1 || echo "${yellow_excl} Could not upgrade ${1}."
   else
     # Formula is not installed, install it
     if output=$(brew install "$1" 2>&1); then
@@ -162,7 +163,7 @@ echo "${bold}Find your GitLab Username${normal}"
 echo "1. Navigate to ${bold}https://git.act3-ace.com${normal}"
 echo "2. Click your profile icon in the top right corner"
 echo "3. Your GitLab Username is shown below your name after an \"@\" symbol"
-echo -e "\tex: \"@jdoe\", username is \"jdoe\""
+echo "   ex: \"@jdoe\", username is \"jdoe\""
 echo
 echo "${bold}Create a GitLab Personal Access Token${normal}"
 echo "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
@@ -176,10 +177,26 @@ read -r -p "Enter Username>" USERNAME
 read -s -r -p "Enter Token>" TOKEN
 echo
 
-# GIT SSH CREDENTIALS
-echo -e "\n${bold}Validating GitLab Personal Access Token${normal}"
+############################################################
+# Validate Inputs                                          #
+############################################################
 
-echo -e -n "Installing yq to check response... "
+if [ "$USERNAME" = "" ]; then
+  echo "${red_x}${red} Empty input for username.${normal}"
+  echo "Aborting."
+  exit 1
+fi
+
+if [ "$TOKEN" = "" ]; then
+  echo "${red_x}${red} Empty input for token.${normal}"
+  echo "Aborting."
+  exit 1
+fi
+
+echo
+echo "${bold}Validating GitLab Personal Access Token${normal}"
+
+echo -n "Installing yq to check response... "
 brew_install "yq"
 
 token_valid="true"
@@ -212,11 +229,13 @@ if output=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOK
     echo "${green_check} Token has \"api\" scope"
   fi
 else
-  echo "${red_x} Token not found on GitLab"
   token_valid="false"
 
   # Log the response no matter what
-  echo -e "\tGitLab responded with:\n\t$output"
+  echo "${red_x} Token not found on GitLab"
+  echo
+  echo "GitLab responded with:"
+  echo "$output"
 fi
 
 if ! [ $token_valid = "true" ]; then
@@ -228,16 +247,18 @@ fi
 # HAND OFF TO PRIVATE SCRIPT
 echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
-if private_script=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+if output=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
   echo "${green_check} Downloaded the private script"
   echo "Starting the private script... "
   echo
   # no error handling for this, exit as it exits
-  # printf '%s:%s\n' "$USERNAME" "$TOKEN" | /usr/bin/env bash -c "$private_script"
-  /usr/bin/env bash -c "$private_script" "$(printf '%s' "$USERNAME")" "$(printf '%s' "$TOKEN")"
+  # printf '%s:%s\n' "$USERNAME" "$TOKEN" | /usr/bin/env bash -c "$output"
+  /usr/bin/env bash -c "$output" "$(printf '%s' "$USERNAME")" "$(printf '%s' "$TOKEN")"
 else
   echo "${red_x} Couldn't download the private script"
-  echo -e "\tGitLab responded with:\n\t$private_script"
+  echo
+  echo "GitLab responded with:"
+  echo "$output"
   exit 1
 fi
