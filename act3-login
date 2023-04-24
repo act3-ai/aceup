@@ -1,11 +1,24 @@
 #!/usr/bin/env bash
 
-# To run: /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+############################################################
+############################################################
+# This is the private component of the ACT3 Login Script
+# The username and token are read from stdin
+#  as a colon-separated pair:
+# printf '%s:%s\n' "$USERNAME" "$TOKEN" | act3-login-private
+############################################################
+############################################################
 
-#TODO: add DoD certificate installation
+############################################################
+# Global setup                                             #
+############################################################
 
 # Have command error out on any command failure
 set -e
+
+# Set no auto update for this script
+# shellcheck disable=SC2034
+HOMEBREW_NO_AUTO_UPDATE=1
 
 # Initialize text formatting shortcuts
 bold=$(tput bold)
@@ -18,6 +31,10 @@ green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
 
+############################################################
+# Preparation                                              #
+############################################################
+
 echo "$blue"'
           _____ _______ ____      _      ____   _____ _____ _   _ 
     /\   / ____|__   __|___ \    | |    / __ \ / ____|_   _| \ | |
@@ -27,129 +44,167 @@ echo "$blue"'
 /_/    \_\_____|  |_|  |____/    |_____|______|\_____|_____|_| \_|
 '"$normal"
 
-echo -e "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
+echo "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 
-echo -e "\n${bold}Preparing for login${normal}"
+############################################################
+# Verify Prerequisites                                     #
+############################################################
 
-# SYSTEM CHECK
-# Default XDG directories used in the script
-IS_WSL=false
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-  echo "${green_check} Detected OS type Linux"
-  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-  # DETERMINE IF TERMINAL IS RUNNING IN WSL
-  # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
-  if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
-    echo "${green_check} Detected Windows Subsystem for Linux (WSL) installation"
-    IS_WSL=true
+echo
+echo "${bold}Checking prerequisites${normal}"
+
+system_check() {
+  # Default XDG directories used in the script
+  echo -n "Checking OS type... "
+  if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    echo "${green_check} Detected OS type Linux"
+    XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+    # DETERMINE IF TERMINAL IS RUNNING IN WSL
+    # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
+    if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
+      echo "${green_check} Detected Windows Subsystem for Linux (WSL) installation"
+    fi
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "${green_check} Detected OS type macOS"
+    XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
+  else
+    echo "${yellow}! WARNING: Unsupported OS type \"${OSTYPE}\"${normal}"
+    XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
   fi
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "${green_check} Detected OS type macOS"
-  XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
-  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$HOME/Library/Application Support}"
-  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/Library/Application Support}"
-else
-  echo "${yellow}WARNING: Unsupported OS type \"${OSTYPE}\"${normal}"
-  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-fi
+}
 
-# Create log file
-readable_timestamp=$(date "+%D %T")
-timestamp=$(date +%s)
-LOG_FILE="$XDG_CACHE_HOME/act3/login/logs_$timestamp"
-mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$LOG_FILE"
-echo "${green_check} Created log file: $LOG_FILE"
+validate_git() {
+  echo -n "Checking for Git... "
+  if command -v git >/dev/null 2>&1; then
+    echo "${green_check} Git is installed"
+  else
+    echo "${red_x}${red} Git not installed, ACT3 Login requires Git.${normal}"
+    echo
+    echo "Install Git by following the instructions for your system:"
+    echo
+    echo "https://git-scm.com/"
+    echo
+    echo "Aborting."
+    exit 1
+  fi
+}
 
-# Log XDG directories
-{ echo -e "XDG_CACHE_HOME=$XDG_CACHE_HOME\nXDG_RUNTIME_DIR=$XDG_RUNTIME_DIR\nXDG_CONFIG_HOME=$XDG_CONFIG_HOME"; } >>"$LOG_FILE"
+validate_homebrew() {
+  # FAIL IF HOMEBREW IS NOT INSTALLED
+  echo -n "Checking for Homebrew... "
+  if command -v brew >/dev/null 2>&1; then
+    echo "${green_check} Homebrew is installed"
+  else
+    echo "${red_x}${red} Homebrew not installed, ACT3 Login requires Homebrew.${normal}"
+    echo
+    echo "Install Homebrew with the following command (from https://brew.sh/):"
+    echo
+    echo "/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+    echo
+    echo "Aborting."
+    exit 1
+  fi
 
-# FAIL IF HOMEBREW IS NOT INSTALLED
-if 1 command -v brew >/dev/null 2>&1; then
-  echo -e "${red_x}${red} Homebrew not installed, ACT3 Login requires Homebrew.${normal}"
-  echo -e "\nInstall Homebrew with the following command:"
-  echo -e "\n\t/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-  echo -e "\nAborting."
-  exit 1
-fi
+  # Check homebrew installation for issues with "brew doctor"
+  echo -n "Running \"brew doctor\"... "
+  if brew doctor >/dev/null 2>&1; then
+    echo "$green_check Passed"
+  else
+    echo "${red_x}"
+    echo "${yellow}! WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
+  fi
+
+  # Update Homebrew's catalog so the latest verison of dependencies are installed
+  echo -n "Running \"brew update\"... "
+  # eat "brew update" failure because it could fail for act3/ace-tools tap
+  brew update >/dev/null 2>&1 && echo "${green_check} " || echo "${yellow}! Non-fatal error${normal}"
+}
+
+system_check
+validate_git
+validate_homebrew
 
 # CHECK IF dev-tools IS INSTALLED AND EXPLAIN HOW TO UNINSTALL
-if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >>"$LOG_FILE" 2>&1; then
-  echo -e "${yellow_excl}${yellow} WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\"${normal}"
+if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >/dev/null 2>&1; then
+  echo "${yellow}! WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\"${normal}"
 fi
-
-# Set no auto update for this script
-export HOMEBREW_NO_AUTO_UPDATE=1
-BREW_BIN=$(brew --prefix)/bin
 
 # Ensures a Homebrew formula is installed
 brew_install() {
   # Check if installed: brew list
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
-  if brew list "$1" >>"$LOG_FILE" 2>&1; then
-    echo -e "$2${green_check} $1 already installed"
+  if brew list "$1" >/dev/null 2>&1; then
+    echo "${green_check} $1 already installed"
     # Formula is already installed, upgrade it
-    brew upgrade "$1" >>"$LOG_FILE" 2>&1 || echo -e "\t${red_x} Failed to upgrade $1. Check logs"
-  # Formula is not installed, install it
-  elif brew install "$1" >>"$LOG_FILE"; then
-    echo -e "$2${green_check} Installed $1"
+    brew upgrade "$1" >/dev/null 2>&1 || echo "${yellow_excl} Could not upgrade ${1}."
   else
-    echo -e "$2${red_x} Failed to install ${1}. Check logs"
-    exit 1 # Fail if dependency cannot be met
-  fi
-}
-
-# Upgrades a homebrew dependency if it is installed
-brew_upgrade() {
-  # Check if installed: brew list
-  #  If installed, upgrade: brew upgrade
-  #  If not installed, return without error
-  if brew list "$1" >>"$LOG_FILE" 2>&1; then
-    # Formula is already installed, upgrade it
-    if brew upgrade "$1" >>"$LOG_FILE" 2>&1; then
-      echo -e "$2${green_check} Upgraded ${1}"
+    # Formula is not installed, install it
+    if output=$(brew install "$1" 2>&1); then
+      echo "${green_check} Installed $1"
     else
-      echo -e "$2${red_x} Failed to upgrade ${1}. Check logs"
+      echo "${red_x}${red} Failed to install required dependency ${1}.${normal}"
+      echo
+      echo "Output of \"brew install ${1}\":"
+      echo
+      echo "$output"
+      echo
+      echo "Aborting."
+      exit 1 # Fail if dependency cannot be met
     fi
   fi
-  # FAILED UPGRADE SHOULD NOT EXIT THE SCRIPT
 }
 
-# Check homebrew installation for issues with "brew doctor"
-echo "Checking Homebrew installation:"
-echo -e -n "\tRunning \"brew doctor\"... "
-if brew doctor >>"$LOG_FILE" 2>&1; then
-  echo -e "$green_check"
-else
-  echo -e "${red_x}\n\t${yellow_excl}${yellow} WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
-fi
-
-# Update in case yq/jq/crane/docker-credential-helper are out of date
-echo -e -n "\tRunning \"brew update\"... "
-brew update >>"$LOG_FILE" 2>&1 && echo "$green_check" || echo "$yellow Non-fatal error" # eat "brew update" failure because it could fail for act3/ace-tools tap
-echo -e -n "\tInstalling yq for config edits... "
-brew_install "yq"
+############################################################
+# Username/Token entry                                     #
+############################################################
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
-echo -e "\n${bold}Create GitLab Personal Access Token${normal}"
-echo -e "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
-echo "2. Create a GitLab Personal Access Token ${bold}with \"api\" scope${normal}"
-echo "3. Enter your GitLab Username and Personal Access Token:"
-read -r -p "       Enter Username>" USERNAME
-read -s -r -p "       Enter Token>" TOKEN
-echo ""
+echo
+echo "${bold}Find your GitLab Username${normal}"
+echo "1. Navigate to ${bold}https://git.act3-ace.com${normal}"
+echo "2. Click your profile icon in the top right corner"
+echo "3. Your GitLab Username is shown below your name after an \"@\" symbol"
+echo "   ex: \"@jdoe\", username is \"jdoe\""
+echo
+echo "${bold}Create a GitLab Personal Access Token${normal}"
+echo "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
+echo "2. Give the token an identifiable name"
+echo "3. Under \"scopes\", check the \"${bold}api${normal}\" box (leave all others unchecked)"
+echo "4. Create the token by clicking \"Create personal access token\""
+echo "5. Copy the token to your clipboard from the \"Your new personal access token\" box"
+echo
+echo "${bold}Enter your GitLab username and a Personal Access Token:${normal}"
+read -r -p "Enter Username>" USERNAME
+read -s -r -p "Enter Token>" TOKEN
+echo
 
-# GIT SSH CREDENTIALS
-echo -e "\n${bold}Validating GitLab Personal Access Token${normal}"
+############################################################
+# Validate Inputs                                          #
+############################################################
+
+if [ "$USERNAME" = "" ]; then
+  echo "${red_x}${red} Empty input for username.${normal}"
+  echo "Aborting."
+  exit 1
+fi
+
+if [ "$TOKEN" = "" ]; then
+  echo "${red_x}${red} Empty input for token.${normal}"
+  echo "Aborting."
+  exit 1
+fi
+
+echo
+echo "${bold}Validating GitLab Personal Access Token${normal}"
+
+echo -n "Installing yq to check response... "
+brew_install "yq"
 
 token_valid="true"
 
-if output=$(curl -s --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+if output=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
   token_name=$(echo "$output" | yq '.name')
   echo "${green_check} GitLab has token \"${token_name}\""
@@ -169,7 +224,6 @@ if output=$(curl -s --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   [ $token_valid = "true" ] && echo "${green_check} Token is active"
 
   if [[ $(echo "$output" | yq 'contains({"scopes": [ "api" ]})') != "true" ]]; then
-    # TODO: should setup continue for things the token has the correct scope for?
     # ex: registry scope triggers registry login
     # ex: repository scope triggers git credential setup
     echo "${red_x} Token does not have required \"api\" scope"
@@ -178,16 +232,13 @@ if output=$(curl -s --request GET --header "PRIVATE-TOKEN: $TOKEN" \
     echo "${green_check} Token has \"api\" scope"
   fi
 else
-  echo "${red_x} Token not found on GitLab"
   token_valid="false"
 
   # Log the response no matter what
-  echo -e "Returned:\n$output" >>"$LOG_FILE"
-
-  # Print the response's "message" field if it exists
-  if message=$(echo "$output" | yq '.message'); then
-    ! [ "$message" = "null" ] && echo -e "\tgit.act3-ace.com responded with: ${message}"
-  fi
+  echo "${red_x} Token not found on GitLab"
+  echo
+  echo "GitLab responded with:"
+  echo "$output"
 fi
 
 if ! [ $token_valid = "true" ]; then
@@ -196,425 +247,30 @@ if ! [ $token_valid = "true" ]; then
   exit 1
 fi
 
-# GIT SSH CREDENTIALS
-echo -e "\n${bold}Setting up Git SSH credentials for the ACT3 GitLab${normal}"
+############################################################
+# Hand off to private script                               #
+############################################################
 
-ssh_key="$HOME/.ssh/act3_ecdsa"
+echo
+echo "${bold}Handing off to private ACT3 Login script${normal}"
 
-# back up existing private key file
-if [ -f "$ssh_key" ] || [ -f "$ssh_key.pub" ]; then
-  echo "Backing up existing keys:"
-  backup="$ssh_key.bak-$timestamp"
-  if mv "$ssh_key" "$backup"; then
-    echo -e "\t${green_check} Private key backup: $backup"
-  fi
-  if mv "$ssh_key.pub" "$backup.pub"; then
-    echo -e "\t${green_check} Public key backup: $backup"
-  fi
-fi
+if output=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
+  echo "${green_check} Downloaded the private script"
 
-# Generate SSH Key
-ssh-keygen -f "$ssh_key" -t ecdsa -b 521 -C "Key for git.act3-ace.com (created by ACT3 Login $readable_timestamp)" -N "" -q
-echo -e "${green_check} Generated SSH key pair\n\tPrivate key: $ssh_key\n\tPublic key: $ssh_key.pub"
-#TODO: make a passphrase, use ssh-add to add key to the agent, provide the agent with the passphrase, store the passphrase in the system keychain
-# on mac:
-# WARNING: The -K and -A flags are deprecated and have been replaced
-#  by the --apple-use-keychain and --apple-load-keychain
-#  flags, respectively.  To suppress this warning, set the
-#  environment variable APPLE_SSH_ADD_BEHAVIOR as described in
-#  the ssh-add(1) manual page.
-
-# Add public key to GitLab user
-if output=$(curl -s --request POST --header "PRIVATE-TOKEN: ${TOKEN}" \
-  --form "title=Key for $(hostname) (created by ACT3 Login ${readable_timestamp})" \
-  --form "key=$(cat "$ssh_key.pub")" \
-  "https://git.act3-ace.com/api/v4/user/keys"); then
-  # Log the response no matter what
-  echo "$output" >>"$LOG_FILE"
-
-  echo "${green_check} Added public key to GitLab account"
+  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script_$(date +%s)"
+  mkdir -p "$XDG_CACHE_HOME/act3/login-private" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
+  echo "$output" > "$PRIVATE_SCRIPT"
+  echo "${green_check} Stored to $PRIVATE_SCRIPT"
+  
+  echo "Starting the private script... "
+  echo
+  # no error handling for this, exit as it exits
+  "$PRIVATE_SCRIPT" -u "$(printf '%s' "$USERNAME")" -t "$(printf '%s' "$TOKEN")"
 else
-  # Log the response no matter what
-  echo "$output" >>"$LOG_FILE"
-
-  echo "${red_x} Couldn't add public key to GitLab account"
-
-  # Print the response's "message" field if it exists
-  message=$(echo "$output" | yq '.message' || echo "null")
-  if ! [ "$message" = "null" ]; then
-    echo -e "\tgit.act3-ace.com responded with: ${message}"
-  fi
-fi
-
-# ADD SERVER SSH PUBLIC KEYS TO KNOWN HOSTS FILE
-
-# TODO: Should this use the -H flag?:
-# Hash all hostnames and addresses in the output.
-# Hashed names may be used normally by ssh(1) and sshd(8),
-# but they do not reveal identifying information should the file's contents be disclosed.
-# TODO: Look into this example from "man ssh-keyscan"
-# Find all hosts from the file ssh_hosts which have new or different keys from those in the sorted file ssh_known_hosts:
-# $ ssh-keyscan -t rsa,dsa,ecdsa,ed25519 -f ssh_hosts | \
-#      sort -u - ssh_known_hosts | diff ssh_known_hosts -
-if fingerprints=$(ssh-keyscan git.act3-ace.com 2>"$LOG_FILE"); then
-  echo "${green_check} Gathered public keys from git.act3-ace.com"
-  # Remove existing fingerprints to avoid duplicates
-  if ssh-keygen -R git.act3-ace.com >>"$LOG_FILE" 2>&1; then
-    echo "${green_check} Backed up existing known_hosts file to $HOME/.ssh/known_hosts.old"
-  else
-    echo "${yellow_excl} Could not remove existing public keys for git.act3-ace.com"
-  fi
-  echo "$fingerprints" >>"$LOG_FILE"              # log the found fingerprints
-  echo "$fingerprints" >>"$HOME/.ssh/known_hosts" # store the found fingerprints in ~/.ssh/known_hosts
-  echo "${green_check} Stored public keys for git.act3-ace.com in $HOME/.ssh/known_hosts"
-else
-  echo "${yellow_excl} Could not gather public keys from git.act3-ace.com"
-fi
-
-# GIT HTTPS CREDENTIALS
-echo -e "\n${bold}Setting up Git HTTPS credentials for the ACT3 GitLab${normal}"
-
-# https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
-# TODO: check current helper so we don't overwrite someone's valid current helper
-# current_helper=$(git config credential.helper)
-if [ "$IS_WSL" == true ]; then
-  # Warn WSL users that the cache helper is temporary
-  echo "${yellow}WARNING: SSH is recommended for Git on WSL. HTTPS credentials will need re-entered every 24 hours.${normal}"
-
-  git config --global credential.helper 'cache --timeout=86400' >>"$LOG_FILE"
-  echo "${green_check} Configured Git to use credential helper \"cache\""
-
-  if printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git credential-cache store >>"$LOG_FILE"; then
-    echo "${green_check} Stored Git HTTPS credentials for \"git.act3-ace.com\""
-  else
-    echo "${yellow_excl} Could not store Git HTTPS credentials"
-  fi
-elif [[ "$OSTYPE" == "linux-gnu" ]]; then
-  # Install git-credential-libsecret
-  echo "Installing git-credential-libsecret for secure credential storage:"
-  brew_install "git-credential-libsecret"
-
-  git config --global credential.helper "libsecret" >>"$LOG_FILE"
-  echo "${green_check} Configured Git to use credential helper \"libsecret\""
-
-  if printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | "$BREW_BIN/git-credential-libsecret" store >>"$LOG_FILE"; then
-    echo "${green_check} Stored Git HTTPS credentials for \"git.act3-ace.com\""
-  else
-    echo "${yellow_excl} Could not store Git HTTPS credentials"
-  fi
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  if [[ $(command -v git) != "/usr/bin/git" ]]; then
-    echo "${yellow_excl} Alternate installation of Git detected, skipping macOS Keychain setup for Git"
-    echo -e "\t${yellow}ACT3 recommends \"/usr/bin/git\" for macOS. Uninstall all other versions of Git and rerun ACT3 Login to set up secure credential storage with the macOS Keychain.${normal}"
-    if brew list git; then
-      echo -e "\t${yellow}Found Homebrew-installed Git, uninstall with \"brew uninstall git\"${normal}"
-    else
-      echo -e "\t${yellow}Found alternate Git installation \"$(command -v git)\"${normal}"
-    fi
-  else
-    # I think MacOS comes with this pre-installed or it's part of git?
-    git config --global credential.helper "osxkeychain" >>"$LOG_FILE"
-    echo "${green_check} Configured Git to use credential helper \"osxkeychain\""
-
-    if printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | git credential-osxkeychain store >>"$LOG_FILE"; then
-      echo "${green_check} Stored Git HTTPS credentials for \"git.act3-ace.com\""
-    else
-      echo "${yellow_excl} Could not store Git HTTPS credentials"
-    fi
-  fi
-fi
-
-# GITLAB CONTAINER REGISTRY CREDENTIALS
-echo -e "\n${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
-
-# Use crane to log in to reg.git.act3-ace.com (crane checks login success)
-echo -e -n "Installing crane to log into the registry... "
-brew_install "crane"
-
-# Use yq to add credsStore field to ~/.docker/config.json
-if [ "$IS_WSL" != true ]; then
-  echo -e -n "Installing docker-credential-helper for secure credential storage... "
-  brew_install "docker-credential-helper"
-
-  CREDS_STORE="secretservice"
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    CREDS_STORE="osxkeychain"
-  fi
-
-  mkdir -p "$HOME/.docker"
-  touch -a "$HOME/.docker/config.json" # -a tells touch to only change the "access" and "change" times
-  "$BREW_BIN"/yq e -i -o=json ".credsStore = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
-  "$BREW_BIN"/yq e -i -o=json ".credHelpers.\"reg.git.act3-ace.com\" = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
-  echo "${green_check} Configured registry authentication to use \"$CREDS_STORE\" ($HOME/.docker/config.json)"
-fi
-
-if printf '%s\n' "$TOKEN" | "$BREW_BIN"/crane auth login reg.git.act3-ace.com -u "$USERNAME" --password-stdin >>"$LOG_FILE"; then
-  echo "${green_check} Logged into the ACT3 GitLab Container Registry (reg.git.act3-ace.com)"
-else
-  echo "${red_x}${red} Couldn't log into reg.git.act3-ace.com, check logs.${normal}"
-  echo "Aborting."
+  echo "${red_x} Couldn't download the private script"
+  echo
+  echo "GitLab responded with:"
+  echo "$output"
   exit 1
 fi
-# ACE TOOLS HOMEBREW TAP
-echo -e "\n${bold}NETRC Creation (for Go development)${normal}"
-
-create_netrc() {
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    cat <<EOF >"$HOME/.netrc"
-machine git.act3-ace.com
-  login $USERNAME
-  password $TOKEN
-EOF
-    chmod 600 "$HOME/.netrc"
-    echo "${green_check} Created \"$HOME/.netrc\""
-  else
-    echo -n "Installing direnv... "
-    brew_install "direnv"
-
-    mkdir -p "$XDG_CONFIG_HOME/direnv"
-    DIRENVRC="$XDG_CONFIG_HOME/direnv/direnvrc"
-    [ -f "$DIRENVRC" ] && cp "$DIRENVRC" "$DIRENVRC.bak-$(date +%s)"
-    [ -f "$DIRENVRC" ] && rm "$DIRENVRC"
-    touch -a "$DIRENVRC"
-
-    echo "export NETRC=\"$XDG_RUNTIME_DIR\"/netrc
-cat <<EOF > \"\$NETRC\"
-machine git.act3-ace.com
-  login $USERNAME
-  password \$(secret-tool lookup server git.act3-ace.com)
-EOF
-chmod 600 \"$NETRC\"
-" >"$XDG_CONFIG_HOME/direnv/direnvrc"
-
-    echo "${green_check} Configured NETRC to use secure credential storage. (\"$XDG_CONFIG_HOME/direnv/direnvrc\")"
-    echo -e "\nTo use the NETRC credentials for a GoLang project, there are additional steps:"
-    echo "1. Create a .envrc file in the project directory (can be empty)."
-    echo "2. Run \"direnv allow\" in the project's directory."
-    echo "3. Add the ACT3 GitLab to your GOPRIVATE (the following command will overwrite existing GOPRIVATE):
-  go env -w GOPRIVATE git.act3-ace.com"
-    echo "Add \".envrc\" to your global .gitignore to avoid committing the file."
-  fi
-}
-
-read -r -p "Do you wish to set up a .netrc file? (y/n)>" yn
-case $yn in
-[Yy]*) create_netrc ;;
-*) echo "Skipping NETRC creation" ;;
-esac
-
-# ACE TOOLS HOMEBREW TAP
-echo -e "\n${bold}Setting up the ACE Tools Homebrew Tap${normal}"
-
-# Tap act3/ace-tools if not already tapped
-if [[ $(brew tap) =~ "act3/ace-tools" ]]; then
-  echo "${green_check} act3/ace-tools is already tapped"
-else
-  brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git >>"$LOG_FILE"
-  echo "${green_check} Added the act3/ace-tools Tap"
-fi
-
-# Upgrade Homebrew Formulae again now that we are authenticated to the ACT3 Homebrew Tap
-echo "Upgrading ACT3 Homebrew Formulae:"
-
-echo -e -n "\tRunning brew update... "
-brew update >>"$LOG_FILE" 2>&1 && echo "$green_check" || echo -e "${red_x}\n\t${yellow}Error: \"brew update\" failed${normal}"
-
-# Give some info on the tap
-echo -e "\n${bold}The act3/ace-tools Tap is the home for ACT3 software${normal}"
-echo "  - Install common tools with: ${bold}brew install ace-tools${normal}"
-echo "  - List all available formulae with ${bold}brew search act3/ace-tools${normal}"
-
-# GITLAB API CREDENTIALS FOR PROJECT TOOL
-echo -e "\n${bold}Setting up GitLab API Credentials for ACT3 Project Tool (act3-pt)${normal}"
-if [ "$IS_WSL" = true ]; then
-  echo -e "${yellow}Add the following line to your \".bashrc\" file to authenticate act3-pt:\n${normal}export ACT3_PT_TOKEN=\"${TOKEN}\""
-else
-  # Install act3-pt and log in to git.act3-ace.com
-  echo -n "Installing act3-pt to login... "
-  if brew list act3-pt-beta >>"$LOG_FILE" 2>&1; then
-    brew_upgrade "act3-pt-beta" # upgrade beta if it is installed
-  else
-    brew_install "act3-pt" # install normally otherwise
-  fi
-
-  printf '%s\n' "$TOKEN" | "$BREW_BIN"/act3-pt login --name act3 --url git.act3-ace.com --token-stdin >>"$LOG_FILE"
-  echo "${green_check} Authenticated act3-pt for the ACT3 GitLab"
-fi
-
-# TELEMETRY SERVER SETUP FOR ACE-DT
-echo -e "\n${bold}Setting up Telemetry Server for ACE Data Tool (ace-dt)${normal}"
-ACE_DT_CONFIG="${ACE_DT_CONFIG:-$XDG_CONFIG_HOME/ace/dt/config.yaml}"
-mkdir -p "$(dirname "$ACE_DT_CONFIG")"
-touch -a "$ACE_DT_CONFIG"
-if [ -s "$ACE_DT_CONFIG" ]; then
-  echo "${green_check} Leaving existing ace-dt configuration file unchanged"
-else
-  cat <<EOF >"$ACE_DT_CONFIG"
-# ACE Data Tool Configuration
-apiVersion: config.dt.act3-ace.io/v1alpha1
-kind: Configuration
-
-# CachePruneMax is the maximum cache size after pruning
-# cachePruneMax: 500Mi
-
-# CachePath is the directory where the cache fields are stored
-# cachePath:
-
-# CompressionLevel is the level used for compression.  Valid values are min, normal, max
-# compressionLevel: normal
-
-# ChunkSize is the maximum size of a chunk used to upload blobs. 0 disables chunking
-# chunkSize: 100Mi
-
-# ConcurrentHTTP is the maximum number of HTTP requests that will be in flight at any given time. Must be positive.
-# concurrentHTTP: 25
-
-# RegistryAuthFile is the file to use for credentials to an OCI registry.  Defaults to ~/.docker/config.json
-# registryAuthFile: ~/.docker/config.json
-
-# Telemetry configuration
-telemetry:
-- name: lion
-  url: https://telemetry.lion.act3-ace.ai
-telemetryUserName: $USERNAME
-EOF
-  echo "${green_check} Created ace-dt configuration file with telemetry server configuration"
-  echo "${green_check} Configured Telemetry server integration"
-fi
-
-# ACE HUB USER CONFIGURATION
-echo -e "\n${bold}Creating ACE Hub User Configuration file${normal}"
-
-# TODO: encrypt this or just post it to ACE Hub
-
-ACE_HUB_USER_FILE="$HOME/Downloads/ace/hub/act3.json"
-
-[ -f "$ACE_HUB_USER_FILE" ] && rm "$ACE_HUB_USER_FILE"
-mkdir -p "$HOME/Downloads/ace/hub" && touch "$ACE_HUB_USER_FILE"
-
-encoded=$(echo -n "$USERNAME:$TOKEN" | base64)
-cat <<EOF >"$ACE_HUB_USER_FILE"
-{
-	"env": {},
-	"envFiles": {
-		"NETRC": "machine git.act3-ace.com\n  login $USERNAME\n  password $TOKEN",
-		"REGISTRY_AUTH_FILE": "{\n  \"auths\": {\n    \"reg.git.act3-ace.com\": {\n      \"auth\": \"$encoded\"\n    }\n  }\n}",
-		"ACE_DT_TELEMETRY_USERNAME": "$USERNAME"
-	},
-	"ips": {
-		"act3": {
-			"registry": "reg.git.act3-ace.com",
-			"username": "$USERNAME",
-			"password": "$TOKEN"
-		}
-	},
-	"userLaunchTemplates": {}
-}
-EOF
-echo "${green_check} Created ACE Hub user configuration file ${bold}\"$ACE_HUB_USER_FILE\"${normal}"
-echo "${yellow_excl}${yellow} This file must be imported to ACE Hub to use your credentials.${normal}"
-
-# CLUSTER ACCESS CONFIGURATION
-echo -e "\n${bold}Set up ACT3 Kubernetes cluster access${normal}"
-
-setup_cluster_access() {
-  echo -n "Installing Kubectl for cluster access... "
-  brew_install "kubectl"
-  echo -n "Installing the Kubectl plugin manager Krew... "
-  brew_install "krew"
-  echo -n "Updating Krew's plugin index... "
-  { "$BREW_BIN"/kubectl-krew update >>"$LOG_FILE" 2>&1 && echo "$green_check"; } || echo -e "$red_x\n\t${yellow_excl} Couldn't update krew plugin index"
-
-  echo -n "Installing the Kubectl OIDC plugin for cluster authentication... "
-  if command -v kubectl-oidc_login >/dev/null 2>&1; then
-    echo -e "${green_check} oidc-login already installed"
-    "$BREW_BIN"/kubectl-krew upgrade oidc-login >>"$LOG_FILE" 2>&1 || :
-  else
-    if "$BREW_BIN"/kubectl-krew install oidc-login >>"$LOG_FILE" 2>&1; then
-      echo -e "${green_check} Installed oidc-login"
-    else
-      echo -e "${red_x} Failed to install oidc-login. Check logs"
-    fi
-  fi
-
-  CLUSTERCONFIG="$HOME/.kube/act3.yaml"
-
-  # Make sure file exists
-  mkdir -p "$HOME/.kube"
-  chmod 700 "$HOME/.kube" # permissions for only user read/write
-  touch -a "$CLUSTERCONFIG"
-  chmod 700 "$CLUSTERCONFIG" # permissions for only user read/write
-  [ -f "$HOME/.kube/config" ] && chmod 700 "$HOME/.kube/config"
-
-  # Write to it
-  cat <<EOF >"$CLUSTERCONFIG"
-# Cluster config sourced from https://git.act3-ace.com/www/www.git.act3-ace.com/-/blob/master/docs/resources/kubernetes.md
-kind: Config
-apiVersion: v1
-clusters:
-- cluster:
-    server: https://k8s.ace.act3.ai
-  name: lion-public
-- cluster:
-    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJlakNDQVIrZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWtNU0l3SUFZRFZRUUREQmx5YTJVeUxYTmwKY25abGNpMWpZVUF4TmpReU56YzJOamMwTUI0WERUSXlNREV5TVRFME5URXhORm9YRFRNeU1ERXhPVEUwTlRFeApORm93SkRFaU1DQUdBMVVFQXd3WmNtdGxNaTF6WlhKMlpYSXRZMkZBTVRZME1qYzNOalkzTkRCWk1CTUdCeXFHClNNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJMRDRDdkRFVHYwL3VVdUJjUlV1MDcvN3RGMTBVTU9TOWlWa1FrekIKSGg1ai9jak4vUThNM2pycTRYVWttR2VhVG9QalhrZjQ0MjNVRzV3cGM5V3NjdFdqUWpCQU1BNEdBMVVkRHdFQgovd1FFQXdJQ3BEQVBCZ05WSFJNQkFmOEVCVEFEQVFIL01CMEdBMVVkRGdRV0JCUWxKNy8wY2k2VzBKODJLd2NwCjhqMW96Vk5WampBS0JnZ3Foa2pPUFFRREFnTkpBREJHQWlFQTdXTy9NRXlMYnJ6Z2ZacDRRdkx5RzltSjNrMGkKeDFxRFlWSUNWQnYrbG1vQ0lRRExMN3R4UFA1SDB0bndvVW1JTy8xOEtjVUI3MzZOanh3eDB4WnNPeEYzMWc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
-    server: https://lion-ctl.act3-ace.ai:6443
-  name: lion
-- cluster:
-    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJlRENDQVIrZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWtNU0l3SUFZRFZRUUREQmx5YTJVeUxYTmwKY25abGNpMWpZVUF4TmpjeU56YzROVGcyTUI0WERUSXpNREV3TXpJd05ETXdObG9YRFRNeU1USXpNVEl3TkRNdwpObG93SkRFaU1DQUdBMVVFQXd3WmNtdGxNaTF6WlhKMlpYSXRZMkZBTVRZM01qYzNPRFU0TmpCWk1CTUdCeXFHClNNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJHeUVGN05XVnZUUGt1eHFDREEydlRhZWg4c3crRTZ3V2tCUTFzSysKZzhDSDluVFpIRnUzTm56a3NjOHV5QkhRTnhtZ2JZMGhLY3EyZFJrTjJHbUxBeEtqUWpCQU1BNEdBMVVkRHdFQgovd1FFQXdJQ3BEQVBCZ05WSFJNQkFmOEVCVEFEQVFIL01CMEdBMVVkRGdRV0JCUVZIZmViaHhGZmNFUlhWY2dDCmJ0S2ZkSnl1b1RBS0JnZ3Foa2pPUFFRREFnTkhBREJFQWlCQ0FMb3YyRUptZENJdjZHajNKc2Q1aWtYZmNHMXkKWGo0aFlTeGpPVzFSZWdJZ2ZDczVFZU00a1JIcXpYWkxsMG95Z250SitrelhzOGFEaFdSa09GakE0VmM9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-    server: https://meerkat-ctl.act3-ace.ai:6443
-  name: meerkat
-users:
-- name: gitlab-oidc
-  user:
-    exec:
-      apiVersion: client.authentication.k8s.io/v1beta1
-      args:
-      - oidc-login
-      - get-token
-      - --oidc-issuer-url=https://git.act3-ace.com
-      - --oidc-client-id=f784af5244e3f5875d932f99a82b0c4147b17fa656e58e0e1acaea3621db2c33
-      command: kubectl
-      env: null
-      provideClusterInfo: false
-contexts:
-- context:
-    cluster: lion-public
-    user: gitlab-oidc
-  name: lion
-- context:
-    cluster: meerkat
-    user: gitlab-oidc
-  name: meerkat
-current-context: lion
-EOF
-  echo -e "${green_check} Created cluster configuration file ${bold}\"$CLUSTERCONFIG\"${normal}"
-
-  if [ -f "$HOME/.kube/config" ]; then
-    backup="$HOME/.kube/config.bak-$(date +%s)"
-    cp "$HOME/.kube/config" "$backup"
-    echo "${green_check} Backed up existing configuration to \"$backup\""
-  fi
-
-  KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$BREW_BIN"/kubectl config view --raw >~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
-  echo "${green_check} Merged cluster configuration into \"$HOME/.kube/config\"."
-
-  if output=$(kubectl create secret docker-registry act3 --docker-server reg.git.act3-ace.com --docker-username "$USERNAME" --docker-password "$TOKEN" -n "$USERNAME-workspace" --context lion 2>&1); then
-    echo "${green_check} $output"
-  else
-    if [[ "$output" == *"already exists"* ]]; then
-      echo "${green_check} Secret \"act3\" already created in namespace $USERNAME-workspace"
-    else
-      echo "${yellow_excl}${yellow} WARNING: Could not create secret, you may have to request to be added to \"ace-project\"${normal}"
-    fi
-  fi
-}
-
-echo "Existing cluster configuration will be backed up before creating a new config file."
-read -r -p "Do you wish to proceed?
-(y/n)>" yn
-case $yn in
-[Yy]*) setup_cluster_access || : ;; # don't fail here
-*) echo "Skipping cluster access setup" ;;
-esac
-
-echo -e "\n${bold}${green}Success!${normal}"
