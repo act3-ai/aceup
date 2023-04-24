@@ -58,6 +58,7 @@ system_check() {
   echo -n "Checking OS type... "
   if [[ "$OSTYPE" == "linux-gnu" ]]; then
     echo "${green_check} Detected OS type Linux"
+    XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
     # DETERMINE IF TERMINAL IS RUNNING IN WSL
     # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
     if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
@@ -65,8 +66,10 @@ system_check() {
     fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo "${green_check} Detected OS type macOS"
+    XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
   else
     echo "${yellow}! WARNING: Unsupported OS type \"${OSTYPE}\"${normal}"
+    XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
   fi
 }
 
@@ -244,17 +247,26 @@ if ! [ $token_valid = "true" ]; then
   exit 1
 fi
 
-# HAND OFF TO PRIVATE SCRIPT
+############################################################
+# Hand off to private script                               #
+############################################################
+
 echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
+
 if output=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
   echo "${green_check} Downloaded the private script"
+
+  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script_$(date +%s)"
+  mkdir -p "$XDG_CACHE_HOME/act3/login-private" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
+  echo "$output" > "$PRIVATE_SCRIPT"
+  echo "${green_check} Stored to $PRIVATE_SCRIPT"
+  
   echo "Starting the private script... "
   echo
   # no error handling for this, exit as it exits
-  # printf '%s:%s\n' "$USERNAME" "$TOKEN" | /usr/bin/env bash -c "$output"
-  /usr/bin/env bash -c "$output" "$(printf '%s' "$USERNAME")" "$(printf '%s' "$TOKEN")"
+  "$PRIVATE_SCRIPT" -u "$(printf '%s' "$USERNAME")" -t "$(printf '%s' "$TOKEN")"
 else
   echo "${red_x} Couldn't download the private script"
   echo
