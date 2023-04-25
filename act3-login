@@ -279,7 +279,7 @@ if output=$(curl -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOK
   success "Downloaded the private script"
 
   PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script_$(date +%s)"
-  mkdir -p "$XDG_CACHE_HOME/act3/login-private" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
+  mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
   echo "$output" > "$PRIVATE_SCRIPT"
   success "Stored to $PRIVATE_SCRIPT"
   
