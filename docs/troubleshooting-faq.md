@@ -4,6 +4,8 @@
 
 ## ACT3 Login Troubleshooting
 
+**ACT3 Login produces a log file with detailed logs from its execution. This is the first place to check when troubleshooting an issue with the script.**
+
 My previous token is still stored when I check the keyring.
 
 > Try relaunching the keyring GUI, it might not have updated yet.
@@ -18,6 +20,17 @@ I am getting this error during Git credential setup: `git: 'credential-osxkeycha
 I am getting this error during Kubernetes secret creation: `error: unable to load root certificates: unable to parse bytes as PEM block`
 
 > You may have an out of date certificate in your cluster configuration. Back up your `~/.kube/` directory, delete the `~/.kube/` directory, and rerun ACT3 Login.
+
+If you are still not able to identify the problem:
+
+1. Check the log file created by ACT3 Login
+2. Run `brew doctor` to check your installation of Homebrew for issues
+3. Check your Docker config: `~/.docker/config.json`
+   1. Remove all references to `reg.git.act3-ace.com`
+   2. Remove all references to `credsStore` and `credHelpers`
+   3. Run ACT3 Login again
+4. Check if the `ssh-agent` is running on your system
+   - `ssh-add -l` checks if the agent is running and lists its known identities
 
 ## Additional Resources
 
