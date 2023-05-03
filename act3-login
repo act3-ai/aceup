@@ -130,7 +130,7 @@ validate_homebrew() {
   if brew doctor >/dev/null 2>&1; then
     echo "$green_check Passed"
   else
-    echo "${red_x}"
+    echo "${red_x} Failed"
     echo "${yellow}! WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
   fi
 
