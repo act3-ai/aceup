@@ -220,7 +220,7 @@ echo
 echo "${bold}Validating GitLab Personal Access Token${normal}"
 
 echo -n "Installing curl to request token information... "
-brew_install "yq"
+brew_install "curl"
 echo -n "Installing yq to check response... "
 brew_install "yq"
 
