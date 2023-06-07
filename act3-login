@@ -2,10 +2,8 @@
 
 ############################################################
 ############################################################
-# This is the private component of the ACT3 Login Script
-# The username and token are read from stdin
-#  as a colon-separated pair:
-# printf '%s:%s\n' "$USERNAME" "$TOKEN" | act3-login-private
+# This is the public component of the ACT3 Login Script
+# Prerequisites are verified and token entry is requested.
 ############################################################
 ############################################################
 
@@ -176,17 +174,11 @@ brew_install() {
 }
 
 ############################################################
-# Username/Token entry                                     #
+# Token entry                                              #
 ############################################################
 
 # Read Personal Access Token
 # TODO: link to PAT docs? maybe from dubdubdub
-echo
-echo "${bold}Find your GitLab Username${normal}"
-echo "1. Navigate to ${bold}https://git.act3-ace.com${normal}"
-echo "2. Click your profile icon in the top right corner"
-echo "3. Your GitLab Username is shown below your name after an \"@\" symbol"
-echo "   ex: \"@jdoe\", username is \"jdoe\""
 echo
 echo "${bold}Create a GitLab Personal Access Token${normal}"
 echo "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
@@ -195,20 +187,13 @@ echo "3. Under \"scopes\", check the \"${bold}api${normal}\" box (leave all othe
 echo "4. Create the token by clicking \"Create personal access token\""
 echo "5. Copy the token to your clipboard from the \"Your new personal access token\" box"
 echo
-echo "${bold}Enter your GitLab username and a Personal Access Token:${normal}"
-read -r -p "Enter Username>" USERNAME
+echo "${bold}Enter a GitLab Personal Access Token:${normal}"
 read -s -r -p "Enter Token>" TOKEN
 echo
 
 ############################################################
-# Validate Inputs                                          #
+# Validate Token Input                                     #
 ############################################################
-
-if [ "$USERNAME" = "" ]; then
-  failure_red "Empty input for username."
-  echo "Aborting."
-  exit 1
-fi
 
 if [ "$TOKEN" = "" ]; then
   failure_red "Empty input for token."
@@ -288,7 +273,7 @@ if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request G
   echo "Starting the private script... "
   echo
   # no error handling for this, exit as it exits
-  "$PRIVATE_SCRIPT" -u "$(printf '%s' "$USERNAME")" -t "$(printf '%s' "$TOKEN")"
+  "$PRIVATE_SCRIPT" -t "$(printf '%s' "$TOKEN")"
 else
   failure "Couldn't download the private script"
   echo
