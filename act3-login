@@ -183,11 +183,11 @@ echo
 echo "${bold}Create a GitLab Personal Access Token${normal}"
 echo "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
 echo "2. Give the token an identifiable name"
-echo "3. Under \"scopes\", check the \"${bold}api${normal}\" box (leave all others unchecked)"
-echo "4. Create the token by clicking \"Create personal access token\""
-echo "5. Copy the token to your clipboard from the \"Your new personal access token\" box"
+echo "3. Check the ${bold}api${normal} box under ${bold}scopes${normal} (leave all others unchecked)"
+echo "4. Click ${bold}Create personal access token${normal} to create the token"
+echo "5. Copy the token to your clipboard from the box labelled ${bold}Your new personal access token${normal}"
 echo
-echo "${bold}Enter a GitLab Personal Access Token:${normal}"
+echo "${bold}Enter GitLab Personal Access Token:${normal}"
 read -s -r -p "Enter Token>" TOKEN
 echo
 
