@@ -29,6 +29,8 @@ green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
 
+finish_tasks=""
+
 success() {
   echo "${green_check} ${1}"
 }
@@ -47,6 +49,18 @@ failure() {
 
 failure_red() {
   echo "${red_x}${red} ${1}${normal}"
+}
+
+check_logs() {
+  echo "Troubleshooting: ${bold}https://github.com/act3-ace/aceup/blob/main/docs/troubleshooting-faq.md${normal}"
+  echo "Create Support Ticket: ${bold}https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket${normal}"
+}
+
+abort() {
+  echo "Aborting."
+  echo
+  check_logs
+  exit 1
 }
 
 ############################################################
@@ -102,8 +116,7 @@ validate_git() {
     echo
     echo "https://git-scm.com/"
     echo
-    echo "Aborting."
-    exit 1
+    abort
   fi
 }
 
@@ -119,8 +132,7 @@ validate_homebrew() {
     echo
     echo "/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
     echo
-    echo "Aborting."
-    exit 1
+    abort
   fi
 
   # Check homebrew installation for issues with "brew doctor"
@@ -129,7 +141,8 @@ validate_homebrew() {
     echo "$green_check Passed"
   else
     echo "${red_x} Failed"
-    echo "${yellow}! WARNING: \"brew doctor\" reported issues with your Homebrew installation that could impact ACT3 Login.${normal}"
+    echo "${yellow}! WARNING: Running \"brew doctor\" detected issues with your Homebrew installation that could impact ACT3 Login.${normal}"
+    finish_tasks="$finish_tasks- Fix issues identified by running ${bold}brew doctor${normal}\n"
   fi
 
   # Update Homebrew's catalog so the latest verison of dependencies are installed
@@ -167,8 +180,7 @@ brew_install() {
       echo
       echo "$output"
       echo
-      echo "Aborting."
-      exit 1 # Fail if dependency cannot be met
+      abort # Fail if dependency cannot be met
     fi
   fi
 }
@@ -197,6 +209,7 @@ echo
 
 if [ "$TOKEN" = "" ]; then
   failure_red "Empty input for token."
+  echo
   echo "Aborting."
   exit 1
 fi
@@ -214,15 +227,15 @@ token_valid="true"
 if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
   token_name=$(echo "$output" | "$(brew --prefix)/bin/yq" '.name')
-  success "GitLab has token \"${token_name}\""
+  success "GitLab has token ${bold}${token_name}${normal}"
 
   if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
-    failure "Token has been revoked"
+    failure "Token ${bold}${token_name}${normal} has been revoked"
     token_valid="false"
   fi
 
   if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
-    failure "Token is inactive"
+    failure "Token ${bold}${token_name}${normal} is inactive"
     token_valid="false"
   fi
 
@@ -233,7 +246,7 @@ if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request G
   if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
     # ex: registry scope triggers registry login
     # ex: repository scope triggers git credential setup
-    failure "Token does not have required \"api\" scope"
+    failure "Token ${bold}${token_name}${normal} does not have required \"api\" scope"
     token_valid="false"
   else
     success "Token has \"api\" scope"
@@ -246,10 +259,15 @@ else
   echo
   echo "GitLab responded with:"
   echo "$output"
+  echo
+  abort
 fi
 
 if ! [ $token_valid = "true" ]; then
-  failure_red "Token failed validation, check logs."
+  failure_red "Token ${bold}${token_name}${normal} failed validation."
+  echo
+  echo "Check the instructions under ${bold}Create a GitLab Personal Access Token${normal}."
+  echo
   echo "Aborting."
   exit 1
 fi
@@ -278,5 +296,6 @@ else
   echo
   echo "GitLab responded with:"
   echo "$output"
-  exit 1
+  echo
+  abort
 fi
