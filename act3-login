@@ -185,7 +185,7 @@ echo "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_t
 echo "2. Give the token an identifiable name"
 echo "3. Check the ${bold}api${normal} box under ${bold}scopes${normal} (leave all others unchecked)"
 echo "4. Click ${bold}Create personal access token${normal} to create the token"
-echo "5. Copy the token to your clipboard from the box labelled ${bold}Your new personal access token${normal}"
+echo "5. Copy the token to your clipboard from the box labeled ${bold}Your new personal access token${normal}"
 echo
 echo "${bold}Enter GitLab Personal Access Token:${normal}"
 read -s -r -p "Enter Token>" TOKEN
@@ -268,7 +268,6 @@ if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request G
   PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script_$(date +%s)"
   mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
   echo "$output" > "$PRIVATE_SCRIPT"
-  success "Stored to $PRIVATE_SCRIPT"
   
   echo "Starting the private script... "
   echo
