@@ -4,10 +4,13 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 
 ## Prerequisites
 
+- Sudo privileges on your computer
 - ACT3 Active Directory account
 - Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows only supported through WSL2**)
-- Homebrew installed
 - Git installed
+- Homebrew installed
+
+> Note: before starting the ACT3 Login process for the first time, run `brew doctor` and address any issues until running `brew doctor` results in a confirmation message stating that `Your system is ready to brew.`
 
 ## ACT3 Login
 
@@ -27,7 +30,7 @@ ACT3 Login does the following:
   - ACT3 Project Tool
   - ACT3 Kubernetes clusters
   - ACE Hub
-- Generates a User Configuration file that is manually imported into ACE Hub to save Image Pull Secrets
+- Generates a User Configuration file that needs to be manually imported into ACE Hub to save Image Pull Secrets
 
 ### Run ACT3 Login
 

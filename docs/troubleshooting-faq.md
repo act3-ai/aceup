@@ -8,30 +8,64 @@
 
 If you are not able to identify the problem, first consult the FAQs below. Then, complete the following troubleshooting steps:
 
-1. Check the log file created by ACT3 Login
+1. Read the log file created by ACT3 Login
 2. Run `brew doctor` to check your installation of Homebrew for issues
+    - Address any issues
+    - Repeat process until `brew doctor` states `Your system is ready to brew.`
 3. Check your Docker config: `~/.docker/config.json`
-   1. Remove all references to `reg.git.act3-ace.com`
-   2. Remove all references to `credsStore` and `credHelpers`
-   3. Run ACT3 Login again
-4. Check if the `ssh-agent` is running on your system
-   - `ssh-add -l` checks if the agent is running and lists its known identities
+   - Remove all references to `reg.git.act3-ace.com`
+   - Remove all references to `credsStore` and `credHelpers`
+   - Re-run ACT3 Login
   
 If you are still not able to resolve the issue, [create a support ticket](https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket).
 
-## How do I find the logs for ACT3 Login script?
+## Troubleshooting
+
+### Homebrew Issues
+
+Run the following command to check for issues with your installation of Homebrew:
+
+```sh
+brew doctor
+```
+
+Address any issues identified by `brew doctor` and repeat the command until `brew doctor` states that `Your system is ready to brew.`
+
+#### Installation issues/incomplete installation
+
+The Homebrew installation script prompts the user with tasks to complete to finish installing Homebrew. If you did not complete these tasks, you may have an incomplete installation of Homebrew. If you recently installed Homebrew and are unsure if you completed Homebrew's finishing tasks, use [Homebrew's uninstall script](https://github.com/homebrew/install#uninstall-homebrew), then [reinstall](https://brew.sh/).
+
+Run the following command to check if Homebrew's bin directories are on your PATH:
+
+```sh
+[[ ":$PATH:" == *":$(brew --prefix)/bin:"* ]] && [[ ":$PATH:" == *":$(brew --prefix)/sbin:"* ]] && echo "PASS" || echo "FAIL"
+```
+
+### SSH Authentication Issues
+
+Run the following command to verify the ssh-agent is running on your system:
+
+```sh
+ssh-add -l; echo "Exit code: $?"
+```
+
+If the command fails with an exit code of 2, the ssh-agent is not running on your system, which may affect SSH authentication.
+
+## FAQs
+
+### How do I find the logs for ACT3 Login script?
 
 When the ACT3 Login script runs, a log folder is created. The path to log storage is printed in the ACT3 Login Script output.
 
 After the GitLab Personal Access Token is validated, the login script echoes that it is Handing off to the private ACT3 Login script. In the **Preparing for Login** section, the path to the log file is displayed after the OS type detected.
 
-## My GitLab Personal Access Token expired. How do I update it?
+### My GitLab Personal Access Token expired. How do I update it?
 
 1. Run the [ACT3 Login script](https://github.com/act3-ace/aceup#run-act3-login). You will be prompted to create a new Personal Access Token.
 2. Create a token with the scope of `api` selected.
 3. Provide the value of the new token when prompted.
 
-## My previous token is still stored when I check the keyring. How do I update it?
+### My previous token is still stored when I check the keyring. How do I update it?
 
 Try relaunching the keyring GUI, it might not have updated yet.
 
