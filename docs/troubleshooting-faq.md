@@ -11,18 +11,45 @@ If you are not able to identify the problem, first consult the FAQs below. Then,
 1. Read the log file created by ACT3 Login
 2. Run `brew doctor` to check your installation of Homebrew for issues
     - Address any issues
-    - Re-run `brew doctor` and continue addressing issues until running the command results in a confirmation message stating that `Your system is ready to brew.`
-    - If you are unable to address all issues, use [the script to uninstallHomebrew](https://github.com/homebrew/install#uninstall-homebrew), then [reinstall Homebrew](https://brew.sh/)
-    - Complete all Homebrew prompts displayed in the CLI
-    - Re-run `brew doctor` to verify that you receive a confirmation message stating that `Your system is ready to brew.`
+    - Repeat process until `brew doctor` states `Your system is ready to brew.`
 3. Check your Docker config: `~/.docker/config.json`
    - Remove all references to `reg.git.act3-ace.com`
    - Remove all references to `credsStore` and `credHelpers`
    - Re-run ACT3 Login
-4. Verify the ssh-agent is running on your system
-   - Run `ssh-add -l` to check if the agent is running and list its known identities
   
 If you are still not able to resolve the issue, [create a support ticket](https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket).
+
+## Troubleshooting
+
+### Homebrew Issues
+
+Run the following command to check for issues with your installation of Homebrew:
+
+```sh
+brew doctor
+```
+
+Address any issues identified by `brew doctor` and repeat the command until `brew doctor` states that `Your system is ready to brew.`
+
+#### Installation issues/incomplete installation
+
+The Homebrew installation script prompts the user with tasks to complete to finish installing Homebrew. If you did not complete these tasks, you may have an incomplete installation of Homebrew. If you recently installed Homebrew and are unsure if you completed Homebrew's finishing tasks, use [Homebrew's uninstall script](https://github.com/homebrew/install#uninstall-homebrew), then [reinstall](https://brew.sh/).
+
+Run the following command to check if Homebrew's bin directories are on your PATH:
+
+```sh
+[[ ":$PATH:" == *":$(brew --prefix)/bin:"* ]] && [[ ":$PATH:" == *":$(brew --prefix)/sbin:"* ]] && echo "PASS" || echo "FAIL"
+```
+
+### SSH Authentication Issues
+
+Run the following command to verify the ssh-agent is running on your system:
+
+```sh
+ssh-add -l; echo "Exit code: $?"
+```
+
+If the command fails with an exit code of 2, the ssh-agent is not running on your system, which may affect SSH authentication.
 
 ## FAQs
 
