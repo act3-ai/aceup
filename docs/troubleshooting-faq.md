@@ -47,6 +47,8 @@ Add the following line to your `~/.bashrc` file to add Homebrew's bin directorie
 eval "$(brew shellenv)"
 ```
 
+<!-- Source: https://github.com/Homebrew/install/blob/master/install.sh#L1021 -->
+
 Your terminal will need to be restarted for these changes to take effect.
 
 ### SSH Authentication Issues
