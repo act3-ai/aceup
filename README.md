@@ -4,9 +4,9 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 
 ## Prerequisites
 
-- Sudo privileges on your computer
-- ACT3 Active Directory account
 - Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows only supported through WSL2**)
+- ACT3 Active Directory account
+- Sudo privileges on your computer
 - Git installed
 - Homebrew installed
 
@@ -23,14 +23,14 @@ ACT3 Login is designed to:
 ACT3 Login does the following:
 
 - Enables secure credential storage using your system's keychain
-- Adds the ACE Tools Homebrew tap for access to internal tools
+- Adds the ACT3 Homebrew Tap for access to internal tools
 - Authentication for the following:
-  - Git (SSH and HTTPS)
+  - Git over SSH and HTTPS
   - ACT3 GitLab Container Registry
-  - ACT3 Project Tool
+  - ACT3 Project Tool (`act3-pt`)
   - ACT3 Kubernetes clusters
   - ACE Hub
-- Generates a User Configuration file that needs to be manually imported into ACE Hub to save Image Pull Secrets
+    - User must import the generated User Configuration file on ACE Hub
 
 ### Run ACT3 Login
 
