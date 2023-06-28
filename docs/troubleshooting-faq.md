@@ -16,7 +16,7 @@ If you are not able to identify the problem, first consult the FAQs below. Then,
    - Remove all references to `reg.git.act3-ace.com`
    - Remove all references to `credsStore` and `credHelpers`
    - Re-run ACT3 Login
-  
+
 If you are still not able to resolve the issue, [create a support ticket](https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket).
 
 ## Troubleshooting
