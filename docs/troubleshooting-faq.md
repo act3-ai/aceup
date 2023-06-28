@@ -41,6 +41,14 @@ Run the following command to check if Homebrew's bin directories are on your PAT
 [[ ":$PATH:" == *":$(brew --prefix)/bin:"* ]] && [[ ":$PATH:" == *":$(brew --prefix)/sbin:"* ]] && echo "PASS" || echo "FAIL"
 ```
 
+Add the following line to your `~/.bashrc` file to add Homebrew's bin directories to your PATH:
+
+```sh
+eval "$(brew shellenv)"
+```
+
+Your terminal will need to be restarted for these changes to take effect.
+
 ### SSH Authentication Issues
 
 Run the following command to verify the ssh-agent is running on your system:
