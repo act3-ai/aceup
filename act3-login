@@ -29,6 +29,17 @@ green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
 
+sanitize() {
+  # https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html#:~:text=%24%7Bparameter//pattern/string%7D
+  result="$1"
+  result="${result//$bold}"
+  result="${result//$normal}"
+  result="${result//$red}"
+  result="${result//$green}"
+  result="${result//$yellow}"
+  echo "${result//$blue}"
+}
+
 finish_tasks=()
 
 success() {
@@ -190,33 +201,47 @@ brew_install() {
 ############################################################
 
 box_out() {
+  # Initialize vars
   local s=("$@") b w
+
+  # Iterate over arguments to find longest line and its length
   for l in "${s[@]}"; do
-    ((w<${#l})) && { b="$l"; w="${#l}"; }
+    # Sanitize line so format characters are not counted
+    plain=$(sanitize "$l")
+    ((w<${#plain})) && { b="$plain"; w="${#plain}"; }
   done
+  # Output top border by replacing characters in longest string with dash
   echo ".-${b//?/-}-."
-# | ${b//?/ } |"
   for l in "${s[@]}"; do
-    printf '| %*s |\n' "-$w" "$l"
+    # Calculate padding size without format characters
+    plain=$(sanitize "$l")
+    padding=$((w-${#plain}+1))
+    printf '| %s%*s|\n' "$l" "-$padding" " "
   done
+  # Output bottom border using same approach as top border
   echo "'-${b//?/-}-'"
-#   echo "| ${b//?/ } |
-# '-${b//?/-}-'"
 }
 
 double_box_out() {
+  # Initialize vars
   local s=("$@") b w
+
+  # Iterate over arguments to find longest line and its length
   for l in "${s[@]}"; do
-    ((w<${#l})) && { b="$l"; w="${#l}"; }
+    # Sanitize line so format characters are not counted
+    plain=$(sanitize "$l")
+    ((w<${#plain})) && { b="$plain"; w="${#plain}"; }
   done
+  # Output top border by replacing characters in longest string with dash
   echo "╔=${b//?/=}=╗"
-# | ${b//?/ } |"
   for l in "${s[@]}"; do
-    printf '║ %*s ║\n' "-$w" "$l"
+    # Calculate padding size without format characters
+    plain=$(sanitize "$l")
+    padding=$((w-${#plain}+1))
+    printf '║ %s%*s║\n' "$l" "-$padding" " "
   done
+  # Output bottom border using same approach as top border
   echo "╚=${b//?/=}=╝"
-#   echo "| ${b//?/ } |
-# '-${b//?/-}-'"
 }
 
 # Output instructions
@@ -229,7 +254,6 @@ box_out \
   "3. Check the ${bold}api${normal} box under ${bold}Select scopes${normal} (leave all others unchecked)" \
   "4. Click ${bold}Create personal access token${normal} to create the token" \
   "5. Copy the token to your clipboard from the box labeled ${bold}Your new personal access token${normal}"
-
 echo
 
 echo "${bold}Enter GitLab Personal Access Token:${normal}"
