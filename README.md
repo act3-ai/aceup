@@ -4,13 +4,20 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 
 ## Prerequisites
 
-- Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows only supported through WSL2**)
+- Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows is only supported through WSL2**)
 - ACT3 Active Directory account
-- Sudo privileges on your computer
-- Git installed
-- Homebrew installed
-
-> Note: before starting the ACT3 Login process for the first time, run `brew doctor` and address any issues until running `brew doctor` results in a confirmation message stating that `Your system is ready to brew.`
+- User account with sudo priveleges on your system
+  - List your sudo priveleges with `sudo -l`
+- [curl](https://everything.curl.dev/) installed
+  - Check your system for curl with `which curl`
+  - If missing, follow system-specific instructions from *Everything curl*: [Install curl](https://everything.curl.dev/get)
+- [Git](https://git-scm.com) installed
+  - Check your system for Git with `which git`
+  - If missing, follow system-specific instructions from Git: [Installing Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [Homebrew](https://brew.sh/) installed
+  - Check your system for Homebrew with `which brew`
+  - If missing, install with [Homebrew's installation script](https://brew.sh/) (*be sure to complete tasks under **Next Steps***)
+  - Check your installation of Homebrew by running `brew doctor`
 
 ## ACT3 Login
 
