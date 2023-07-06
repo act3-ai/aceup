@@ -29,7 +29,7 @@ green_check="${green}✓${normal}"
 yellow_excl="${yellow}!${normal}"
 red_x="${red}✗${normal}"
 
-finish_tasks=""
+finish_tasks=()
 
 success() {
   echo "${green_check} ${1}"
@@ -142,7 +142,7 @@ validate_homebrew() {
   else
     echo "${red_x} Failed"
     echo "${yellow}! WARNING: Running \"brew doctor\" detected issues with your Homebrew installation that could impact ACT3 Login.${normal}"
-    finish_tasks="$finish_tasks- Fix issues identified by running ${bold}brew doctor${normal}\n"
+    finish_tasks+=("- Fix issues identified by running ${bold}brew doctor${normal}")
   fi
 
   # Update Homebrew's catalog so the latest verison of dependencies are installed
@@ -189,16 +189,49 @@ brew_install() {
 # Token entry                                              #
 ############################################################
 
-# Read Personal Access Token
-# TODO: link to PAT docs? maybe from dubdubdub
+box_out() {
+  local s=("$@") b w
+  for l in "${s[@]}"; do
+    ((w<${#l})) && { b="$l"; w="${#l}"; }
+  done
+  echo ".-${b//?/-}-."
+# | ${b//?/ } |"
+  for l in "${s[@]}"; do
+    printf '| %*s |\n' "-$w" "$l"
+  done
+  echo "'-${b//?/-}-'"
+#   echo "| ${b//?/ } |
+# '-${b//?/-}-'"
+}
+
+double_box_out() {
+  local s=("$@") b w
+  for l in "${s[@]}"; do
+    ((w<${#l})) && { b="$l"; w="${#l}"; }
+  done
+  echo "╔=${b//?/=}=╗"
+# | ${b//?/ } |"
+  for l in "${s[@]}"; do
+    printf '║ %*s ║\n' "-$w" "$l"
+  done
+  echo "╚=${b//?/=}=╝"
+#   echo "| ${b//?/ } |
+# '-${b//?/-}-'"
+}
+
+# Output instructions
+
 echo
-echo "${bold}Create a GitLab Personal Access Token${normal}"
-echo "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}"
-echo "2. Give the token an identifiable name"
-echo "3. Check the ${bold}api${normal} box under ${bold}scopes${normal} (leave all others unchecked)"
-echo "4. Click ${bold}Create personal access token${normal} to create the token"
-echo "5. Copy the token to your clipboard from the box labeled ${bold}Your new personal access token${normal}"
+box_out \
+  "${bold}Create a GitLab Personal Access Token${normal}" \
+  "1. Navigate to ${bold}https://git.act3-ace.com/-/profile/personal_access_tokens${normal}" \
+  "2. Give the token an identifiable name" \
+  "3. Check the ${bold}api${normal} box under ${bold}Select scopes${normal} (leave all others unchecked)" \
+  "4. Click ${bold}Create personal access token${normal} to create the token" \
+  "5. Copy the token to your clipboard from the box labeled ${bold}Your new personal access token${normal}"
+
 echo
+
 echo "${bold}Enter GitLab Personal Access Token:${normal}"
 read -s -r -p "Enter Token>" TOKEN
 echo

@@ -65,7 +65,7 @@ If the command fails with an exit code of 2, the ssh-agent is not running on you
 
 ### How do I find the logs for ACT3 Login script?
 
-When the ACT3 Login script runs, a log folder is created. The path to log storage is printed in the ACT3 Login Script output.
+When the ACT3 Login script runs, a log folder is created. The path to log storage is printed in the ACT3 Login script output.
 
 After the GitLab Personal Access Token is validated, the login script echoes that it is Handing off to the private ACT3 Login script. In the **Preparing for Login** section, the path to the log file is displayed after the OS type detected.
 
