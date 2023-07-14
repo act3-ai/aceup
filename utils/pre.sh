@@ -183,15 +183,16 @@ brew_install() {
   # Check if installed: brew list
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
-  if cmd_silent brew list "$1"; then
+  if brew list "$1" >>"$LOG_FILE" 2>&1; then
     success "${1} already installed"
     log "" "$1 ALREADY INSTALLED, RUNNING BREW UPGRADE:"
     # Formula is already installed, upgrade it
-    cmd_silent brew upgrade "$1" || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
+    brew upgrade "$1" >>"$LOG_FILE" 2>&1 || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
   else
     log "" "$1 NOT INSTALLED, RUNNING BREW INSTALL:"
     # Formula is not installed, install it
-    if output=$(cmd_output brew install "$1"); then
+    if output=$(brew install "$1" 2>&1); then
+      log "$output"
       success "Installed $1"
     else
       log "$output"
@@ -210,9 +211,9 @@ brew_upgrade() {
   # Check if installed: brew list
   #  If installed, upgrade: brew upgrade
   #  If not installed, return without error
-  if cmd_silent brew list "$1"; then
+  if brew list "$1" >>"$LOG_FILE" 2>&1; then
     # Formula is already installed, upgrade it
-    if cmd_silent brew upgrade "$1"; then
+    if brew upgrade "$1" >>"$LOG_FILE" 2>&1; then
       success "Upgraded ${1}"
     else
       warning "Failed to upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
