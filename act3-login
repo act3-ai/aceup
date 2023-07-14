@@ -18,27 +18,6 @@ finish_tasks=()
 
 source <(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
 
-if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
-  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
-  success "Downloaded the private script"
-
-  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script_$(date +%s)"
-  mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
-  echo "${output}" > "${PRIVATE_SCRIPT}"
-  
-  echo "Starting the private script... "
-  echo
-  # no error handling for this, exit as it exits
-  "$PRIVATE_SCRIPT" -t "$(printf '%s' "$TOKEN")"
-else
-  failure "Couldn't download the private script"
-  echo
-  echo "GitLab responded with:"
-  echo "$output"
-  echo
-  abort
-fi
-
 ############################################################
 # Preparation                                              #
 ############################################################
@@ -53,6 +32,8 @@ echo "$blue"'
 '"$normal"
 
 echo "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
+echo
+create_log_file
 
 ############################################################
 # Verify Prerequisites                                     #
@@ -66,7 +47,6 @@ system_check() {
   echo -n "Checking OS type... "
   if [[ "$OSTYPE" == "linux-gnu" ]]; then
     echo "${green_check} Detected OS type Linux"
-    XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
     # DETERMINE IF TERMINAL IS RUNNING IN WSL
     # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
     if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
@@ -74,10 +54,8 @@ system_check() {
     fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo "${green_check} Detected OS type macOS"
-    XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
   else
     warning_yellow "WARNING: Unsupported OS type \"${OSTYPE}\""
-    XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
   fi
 }
 
@@ -135,31 +113,6 @@ validate_homebrew
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >/dev/null 2>&1; then
   echo "${yellow}! WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\"${normal}"
 fi
-
-# Ensures a Homebrew formula is installed
-brew_install() {
-  # Check if installed: brew list
-  #  If installed, upgrade: brew upgrade
-  #  If not installed, install: brew install
-  if brew list "$1" >/dev/null 2>&1; then
-    success "$1 already installed"
-    # Formula is already installed, upgrade it
-    brew upgrade "$1" >/dev/null 2>&1 || warning "Could not upgrade ${1}."
-  else
-    # Formula is not installed, install it
-    if output=$(brew install "$1" 2>&1); then
-      success "Installed $1"
-    else
-      failure_red "Failed to install required dependency ${1}."
-      echo
-      echo "Output of \"brew install ${1}\":"
-      echo
-      echo "$output"
-      echo
-      abort # Fail if dependency cannot be met
-    fi
-  fi
-}
 
 ############################################################
 # Token entry                                              #
