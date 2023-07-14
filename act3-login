@@ -14,65 +14,30 @@
 # Have command error out on any command failure
 set -e
 
-# Set no auto update for this script
-# shellcheck disable=SC2034
-HOMEBREW_NO_AUTO_UPDATE=1
-
-# Initialize text formatting shortcuts
-bold=$(tput bold)
-normal=$(tput sgr0)
-red=$(tput setaf 1)
-green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-green_check="${green}✓${normal}"
-yellow_excl="${yellow}!${normal}"
-red_x="${red}✗${normal}"
-
-sanitize() {
-  # https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html#:~:text=%24%7Bparameter//pattern/string%7D
-  result="$1"
-  result="${result//$bold}"
-  result="${result//$normal}"
-  result="${result//$red}"
-  result="${result//$green}"
-  result="${result//$yellow}"
-  echo "${result//$blue}"
-}
-
 finish_tasks=()
 
-success() {
-  echo "${green_check} ${1}"
-}
+source <(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
 
-warning() {
-  echo "${yellow_excl} ${1}"
-}
+if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
+  success "Downloaded the private script"
 
-warning_yellow() {
-  echo "${yellow_excl}${yellow} ${1}${normal}"
-}
-
-failure() {
-  echo "${red_x} ${1}"
-}
-
-failure_red() {
-  echo "${red_x}${red} ${1}${normal}"
-}
-
-check_logs() {
-  echo "Troubleshooting: ${bold}https://github.com/act3-ace/aceup/blob/main/docs/troubleshooting-faq.md${normal}"
-  echo "Create Support Ticket: ${bold}https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket${normal}"
-}
-
-abort() {
-  echo "Aborting."
+  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script_$(date +%s)"
+  mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
+  echo "${output}" > "${PRIVATE_SCRIPT}"
+  
+  echo "Starting the private script... "
   echo
-  check_logs
-  exit 1
-}
+  # no error handling for this, exit as it exits
+  "$PRIVATE_SCRIPT" -t "$(printf '%s' "$TOKEN")"
+else
+  failure "Couldn't download the private script"
+  echo
+  echo "GitLab responded with:"
+  echo "$output"
+  echo
+  abort
+fi
 
 ############################################################
 # Preparation                                              #
@@ -200,50 +165,6 @@ brew_install() {
 # Token entry                                              #
 ############################################################
 
-box_out() {
-  # Initialize vars
-  local s=("$@") b w
-
-  # Iterate over arguments to find longest line and its length
-  for l in "${s[@]}"; do
-    # Sanitize line so format characters are not counted
-    plain=$(sanitize "$l")
-    ((w<${#plain})) && { b="$plain"; w="${#plain}"; }
-  done
-  # Output top border by replacing characters in longest string with dash
-  echo ".-${b//?/-}-."
-  for l in "${s[@]}"; do
-    # Calculate padding size without format characters
-    plain=$(sanitize "$l")
-    padding=$((w-${#plain}+1))
-    printf '| %s%*s|\n' "$l" "-$padding" " "
-  done
-  # Output bottom border using same approach as top border
-  echo "'-${b//?/-}-'"
-}
-
-double_box_out() {
-  # Initialize vars
-  local s=("$@") b w
-
-  # Iterate over arguments to find longest line and its length
-  for l in "${s[@]}"; do
-    # Sanitize line so format characters are not counted
-    plain=$(sanitize "$l")
-    ((w<${#plain})) && { b="$plain"; w="${#plain}"; }
-  done
-  # Output top border by replacing characters in longest string with dash
-  echo "╔=${b//?/=}=╗"
-  for l in "${s[@]}"; do
-    # Calculate padding size without format characters
-    plain=$(sanitize "$l")
-    padding=$((w-${#plain}+1))
-    printf '║ %s%*s║\n' "$l" "-$padding" " "
-  done
-  # Output bottom border using same approach as top border
-  echo "╚=${b//?/=}=╝"
-}
-
 # Output instructions
 
 echo
@@ -281,7 +202,7 @@ brew_install "yq"
 
 token_valid="true"
 
-if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
   token_name=$(echo "$output" | "$(brew --prefix)/bin/yq" '.name')
   success "GitLab has token ${bold}${token_name}${normal}"
@@ -336,7 +257,7 @@ fi
 echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
 
-if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
   success "Downloaded the private script"
 
