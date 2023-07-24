@@ -154,14 +154,14 @@ log_eval() {
 	log_echo ""
 	log_echo "\$ $*"
 	echo "Args after log_echo: $*" >>"$LOG_FILE"
-	eval "$*" >>"$LOG_FILE" 2>&1
+	eval "$@" >>"$LOG_FILE" 2>&1
 }
 
 log_out() {
 	log_echo ""
 	log_echo "\$ $*"
 	echo "Args after log_echo: $*" >>"$LOG_FILE"
-	output=$(eval "$*" 2>&1)
+	output=$(eval "$@" 2>&1)
 	exit_code=$?
   	log_echo "$output"
   	echo "$output"
@@ -199,8 +199,6 @@ abort() {
 
 # Ensures a Homebrew formula is installed
 brew_install() {
-  log_echo ""
-  log_echo "Checking for $1 with: brew list $1"
   # Check if installed: brew list
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
