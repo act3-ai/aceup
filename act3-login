@@ -16,7 +16,8 @@ set -e
 
 finish_tasks=()
 
-source <(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
+# shellcheck source=./utils/pre.sh
+source <(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/helpers/utils/pre.sh)
 
 ############################################################
 # Preparation                                              #
@@ -46,14 +47,14 @@ system_check() {
   # Default XDG directories used in the script
   echo -n "Checking OS type... "
   if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    echo "${green_check} Detected OS type Linux"
+    success "Detected OS type Linux"
     # DETERMINE IF TERMINAL IS RUNNING IN WSL
     # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
     if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
-      echo "${green_check} Detected Windows Subsystem for Linux (WSL) installation"
+      success "Detected Windows Subsystem for Linux (WSL) installation"
     fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "${green_check} Detected OS type macOS"
+    success "Detected OS type macOS"
   else
     warning_yellow "WARNING: Unsupported OS type \"${OSTYPE}\""
   fi
@@ -91,18 +92,22 @@ validate_homebrew() {
 
   # Check homebrew installation for issues with "brew doctor"
   echo -n "Running \"brew doctor\"... "
-  if brew doctor >/dev/null 2>&1; then
-    echo "$green_check Passed"
+  if log_eval brew doctor; then
+    success "Passed"
   else
-    echo "${red_x} Failed"
-    echo "${yellow}! WARNING: Running \"brew doctor\" detected issues with your Homebrew installation that could impact ACT3 Login.${normal}"
+    failure "Failed"
+    warning_yellow "WARNING: Running \"brew doctor\" detected issues with your Homebrew installation that could impact ACT3 Login."
     finish_tasks+=("- Fix issues identified by running ${bold}brew doctor${normal}")
   fi
 
   # Update Homebrew's catalog so the latest verison of dependencies are installed
   echo -n "Running \"brew update\"... "
   # eat "brew update" failure because it could fail for act3/ace-tools tap
-  brew update >/dev/null 2>&1 && echo "$green_check" || echo "${yellow}! Non-fatal error${normal}"
+  if log_eval brew update; then
+    echo "$green_check"
+  else 
+    warning_yellow "Failed"
+  fi
 }
 
 system_check
@@ -111,7 +116,7 @@ validate_homebrew
 
 # CHECK IF dev-tools IS INSTALLED AND EXPLAIN HOW TO UNINSTALL
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >/dev/null 2>&1; then
-  echo "${yellow}! WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\"${normal}"
+  warning_yellow "WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\""
 fi
 
 ############################################################
@@ -155,17 +160,17 @@ brew_install "yq"
 
 token_valid="true"
 
-if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+if output=$(log_out "$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
-  token_name=$(echo "$output" | "$(brew --prefix)/bin/yq" '.name')
+  token_name=$(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.name')
   success "GitLab has token ${bold}${token_name}${normal}"
 
-  if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
+  if [[ $(echo "$output" | log_eval "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
     failure "Token ${bold}${token_name}${normal} has been revoked"
     token_valid="false"
   fi
 
-  if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
+  if [[ $(echo "$output" | log_eval "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
     failure "Token ${bold}${token_name}${normal} is inactive"
     token_valid="false"
   fi
@@ -174,7 +179,7 @@ if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $
   # Done this way to combine a successful revoked/active check into one print
   [ $token_valid = "true" ] && success "Token is active"
 
-  if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
+  if [[ $(echo "$output" | log_eval "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
     # ex: registry scope triggers registry login
     # ex: repository scope triggers git credential setup
     failure "Token ${bold}${token_name}${normal} does not have required \"api\" scope"

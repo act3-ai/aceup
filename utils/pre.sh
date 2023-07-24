@@ -2,8 +2,8 @@
 
 ############################################################
 ############################################################
-# This is the public component of the ACT3 Login Script
-# Prerequisites are verified and token entry is requested.
+# This is the setup component of the ACT3 Login Script
+# Formatting tools and helper functions are set
 ############################################################
 ############################################################
 
@@ -117,24 +117,6 @@ double_box_out() {
 	echo "╚=${b//?/=}=╝"
 }
 
-append_to_file() {
-	mkdir -p "$(dirname "$1")" && touch -a "$1" # ensure file exists
-	echo "$2" >>"$1"                            # concatenate to file
-}
-
-check_logs() {
-	box_out "Check log file: ${bold}${LOG_FILE}${normal}" \
-		"Troubleshooting: ${bold}https://github.com/act3-ace/aceup/blob/main/docs/troubleshooting-faq.md${normal}" \
-		"Create Support Ticket: ${bold}https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket${normal}"
-}
-
-abort() {
-	echo "Aborting."
-	echo
-	check_logs
-	exit 1
-}
-
 ############################################################
 # Log file and XDG Directories                             #
 ############################################################
@@ -160,17 +142,53 @@ fi
 
 LOG_FILE="$XDG_CACHE_HOME/act3/login/logs"
 
-log() {
-	for arg in "$@"; do
-		echo "$arg" >>"$LOG_FILE"
-	done
+redact() {
+	echo "${*/$TOKEN/\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*}"
+}
+
+log_echo() {
+	echo redact "$*" >>"$LOG_FILE"
+}
+
+log_eval() {
+	log_echo ""
+	log_echo "\$ $*"
+	eval "$*" >>"$LOG_FILE" 2>&1
+}
+
+log_out() {
+	log_echo ""
+	log_echo "\$ $*"
+	output=$(eval "$*" 2>&1)
+	exit_code=$?
+  	log_echo "$output"
+  	echo "$output"
+  	return "$exit_code"
 }
 
 create_log_file() {
 	[ -f "$LOG_FILE" ] && rm "$LOG_FILE"                       # remove existing log file (if exists)
 	mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$LOG_FILE" # create new log file
-	log "ACT3 Login Logs: $(date "+%D %T")"
+	log_echo "ACT3 Login Logs: $(date "+%D %T")"
 	success "Created log file ${bold}${LOG_FILE}${normal}"
+}
+
+append_to_file() {
+	mkdir -p "$(dirname "$1")" && touch -a "$1" # ensure file exists
+	echo "$2" >>"$1"                            # concatenate to file
+}
+
+check_logs() {
+	box_out "Check log file: ${bold}${LOG_FILE}${normal}" \
+		"Troubleshooting: ${bold}https://github.com/act3-ace/aceup/blob/main/docs/troubleshooting-faq.md${normal}" \
+		"Create Support Ticket: ${bold}https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket${normal}"
+}
+
+abort() {
+	echo "Aborting."
+	echo
+	check_logs
+	exit 1
 }
 
 ############################################################
@@ -179,23 +197,20 @@ create_log_file() {
 
 # Ensures a Homebrew formula is installed
 brew_install() {
-  log "" "Checking for $1 with: brew list $1"
+  log_echo ""
+  log_echo "Checking for $1 with: brew list $1"
   # Check if installed: brew list
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
-  if brew list "$1" >>"$LOG_FILE" 2>&1; then
+  if log_eval brew list "$1"; then
     success "${1} already installed"
-    log "" "$1 ALREADY INSTALLED, RUNNING BREW UPGRADE:"
     # Formula is already installed, upgrade it
-    brew upgrade "$1" >>"$LOG_FILE" 2>&1 || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
+    log_eval brew upgrade "$1" || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
   else
-    log "" "$1 NOT INSTALLED, RUNNING BREW INSTALL:"
     # Formula is not installed, install it
-    if output=$(brew install "$1" 2>&1); then
-      log "$output"
+    if output=$(log_out brew install "$1"); then
       success "Installed $1"
     else
-      log "$output"
       failure_red "Failed to install required dependency ${1}."
       echo
       echo "Output of ${bold}brew install ${1}${normal}:"
@@ -211,9 +226,9 @@ brew_upgrade() {
   # Check if installed: brew list
   #  If installed, upgrade: brew upgrade
   #  If not installed, return without error
-  if brew list "$1" >>"$LOG_FILE" 2>&1; then
+  if log_eval brew list "$1"; then
     # Formula is already installed, upgrade it
-    if brew upgrade "$1" >>"$LOG_FILE" 2>&1; then
+    if log_eval brew upgrade "$1"; then
       success "Upgraded ${1}"
     else
       warning "Failed to upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
