@@ -147,7 +147,7 @@ redact() {
 }
 
 log_echo() {
-	eval redact "$*" >>"$LOG_FILE"
+	eval redact "$@" >>"$LOG_FILE"
 }
 
 log_eval() {
