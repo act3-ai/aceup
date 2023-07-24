@@ -147,18 +147,20 @@ redact() {
 }
 
 log_echo() {
-	redact "$*" >>"$LOG_FILE"
+	eval redact "$*" >>"$LOG_FILE"
 }
 
 log_eval() {
 	log_echo ""
 	log_echo "\$ $*"
+	echo "Args after log_echo: $*" >>"$LOG_FILE"
 	eval "$*" >>"$LOG_FILE" 2>&1
 }
 
 log_out() {
 	log_echo ""
 	log_echo "\$ $*"
+	echo "Args after log_echo: $*" >>"$LOG_FILE"
 	output=$(eval "$*" 2>&1)
 	exit_code=$?
   	log_echo "$output"
