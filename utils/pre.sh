@@ -140,7 +140,7 @@ else
 	XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 fi
 
-LOG_FILE="$XDG_CACHE_HOME/act3/login/logs"
+LOG_FILE="$XDG_CACHE_HOME/act3/login/logs.txt"
 
 redact() {
 	echo "${*/$TOKEN/\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*}"

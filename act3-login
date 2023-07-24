@@ -216,10 +216,10 @@ echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
 
 if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
-  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
+  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=helpers"); then
   success "Downloaded the private script"
 
-  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script_$(date +%s)"
+  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/private-script.sh"
   mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
   echo "$output" > "$PRIVATE_SCRIPT"
   
