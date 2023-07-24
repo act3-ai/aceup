@@ -18,6 +18,7 @@ finish_tasks=()
 
 # shellcheck source=./utils/pre.sh
 source <(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/helpers/utils/pre.sh)
+# source ./utils/pre.sh
 
 ############################################################
 # Preparation                                              #
@@ -165,12 +166,12 @@ if output=$(log_out "$curl" -s --fail-with-body --request GET --header "PRIVATE-
   token_name=$(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.name')
   success "GitLab has token ${bold}${token_name}${normal}"
 
-  if [[ $(echo "$output" | log_eval "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
+  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
     failure "Token ${bold}${token_name}${normal} has been revoked"
     token_valid="false"
   fi
 
-  if [[ $(echo "$output" | log_eval "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
+  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
     failure "Token ${bold}${token_name}${normal} is inactive"
     token_valid="false"
   fi
@@ -179,7 +180,7 @@ if output=$(log_out "$curl" -s --fail-with-body --request GET --header "PRIVATE-
   # Done this way to combine a successful revoked/active check into one print
   [ $token_valid = "true" ] && success "Token is active"
 
-  if [[ $(echo "$output" | log_eval "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
+  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
     # ex: registry scope triggers registry login
     # ex: repository scope triggers git credential setup
     failure "Token ${bold}${token_name}${normal} does not have required \"api\" scope"
