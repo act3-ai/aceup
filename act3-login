@@ -17,7 +17,7 @@ set -e
 finish_tasks=()
 
 # shellcheck source=utils/pre.sh
-pre=$(curl -fSL https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
+pre=$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
 echo "$pre"
 # shellcheck source=utils/pre.sh
 source <(echo "$pre")
