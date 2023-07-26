@@ -42,7 +42,7 @@ ACT3 Login does the following:
 ### Run ACT3 Login
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
+/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login)"
 ```
 
 > Check [prerequisites](#prerequisites) before running.
