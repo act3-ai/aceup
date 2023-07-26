@@ -66,16 +66,16 @@ If the command fails with an exit code of 2, the ssh-agent is not running on you
 
 ### How do I find the logs for ACT3 Login script?
 
-ACT3 Login produces a log file at the location `$XDG_CACHE_HOME/act3/login/logs`. If `$XDG_CACHE_HOME` unset or empty on your system, its default value is used. ACT3 Login prints the path to the log file on your system under the *Preparing for Login* header, with a message saying `Created log file <log file>`. If the script exited with a failure, the path to the log file will be printed to your terminal before exiting.
+ACT3 Login produces a log file at the location `$XDG_CACHE_HOME/act3/login/logs.txt`. If `$XDG_CACHE_HOME` unset or empty on your system, its default value is used. ACT3 Login prints the path to the log file on your system after the welcome message, in the format `Created log file <log file>`. If the script aborts, the path to the log file will be printed to your terminal before exiting.
 
 Note: WSL2 users can open File Explorer from the Ubuntu terminal by running `explorer.exe <path>`
 
 > `$XDG_CACHE_HOME` is defined by the [XDG Base Directory specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html).
 >
-> | System | Default `$XDG_CACHE_HOME` | Default log file                       |
-> | ------ | ------------------------- | -------------------------------------- |
-> | Linux  | `$HOME/.cache`            | `$HOME/.cache/act3/login/logs`         |
-> | macOS  | `$HOME/Library/Caches`    | `$HOME/Library/Caches/act3/login/logs` |
+> | System | Default `$XDG_CACHE_HOME` | Default log file                           |
+> | ------ | ------------------------- | ------------------------------------------ |
+> | Linux  | `$HOME/.cache`            | `$HOME/.cache/act3/login/logs.txt`         |
+> | macOS  | `$HOME/Library/Caches`    | `$HOME/Library/Caches/act3/login/logs.txt` |
 
 ### My GitLab Personal Access Token expired. How do I update it?
 

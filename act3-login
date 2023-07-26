@@ -14,65 +14,11 @@
 # Have command error out on any command failure
 set -e
 
-# Set no auto update for this script
-# shellcheck disable=SC2034
-HOMEBREW_NO_AUTO_UPDATE=1
-
-# Initialize text formatting shortcuts
-bold=$(tput bold)
-normal=$(tput sgr0)
-red=$(tput setaf 1)
-green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-green_check="${green}✓${normal}"
-yellow_excl="${yellow}!${normal}"
-red_x="${red}✗${normal}"
-
-sanitize() {
-  # https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html#:~:text=%24%7Bparameter//pattern/string%7D
-  result="$1"
-  result="${result//$bold}"
-  result="${result//$normal}"
-  result="${result//$red}"
-  result="${result//$green}"
-  result="${result//$yellow}"
-  echo "${result//$blue}"
-}
-
 finish_tasks=()
 
-success() {
-  echo "${green_check} ${1}"
-}
-
-warning() {
-  echo "${yellow_excl} ${1}"
-}
-
-warning_yellow() {
-  echo "${yellow_excl}${yellow} ${1}${normal}"
-}
-
-failure() {
-  echo "${red_x} ${1}"
-}
-
-failure_red() {
-  echo "${red_x}${red} ${1}${normal}"
-}
-
-check_logs() {
-  echo "Troubleshooting: ${bold}https://github.com/act3-ace/aceup/blob/main/docs/troubleshooting-faq.md${normal}"
-  echo "Create Support Ticket: ${bold}https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket${normal}"
-}
-
-abort() {
-  echo "Aborting."
-  echo
-  check_logs
-  exit 1
-}
+# shellcheck source=utils/pre.sh
+source <(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
+# source utils/pre.sh
 
 ############################################################
 # Preparation                                              #
@@ -88,6 +34,8 @@ echo "$blue"'
 '"$normal"
 
 echo "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
+echo
+create_log_file
 
 ############################################################
 # Verify Prerequisites                                     #
@@ -100,19 +48,16 @@ system_check() {
   # Default XDG directories used in the script
   echo -n "Checking OS type... "
   if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    echo "${green_check} Detected OS type Linux"
-    XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+    success "Detected OS type Linux"
     # DETERMINE IF TERMINAL IS RUNNING IN WSL
     # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
     if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
-      echo "${green_check} Detected Windows Subsystem for Linux (WSL) installation"
+      success "Detected Windows Subsystem for Linux (WSL) installation"
     fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "${green_check} Detected OS type macOS"
-    XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
+    success "Detected OS type macOS"
   else
     warning_yellow "WARNING: Unsupported OS type \"${OSTYPE}\""
-    XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
   fi
 }
 
@@ -148,18 +93,22 @@ validate_homebrew() {
 
   # Check homebrew installation for issues with "brew doctor"
   echo -n "Running \"brew doctor\"... "
-  if brew doctor >/dev/null 2>&1; then
-    echo "$green_check Passed"
+  if log_eval brew doctor; then
+    success "Passed"
   else
-    echo "${red_x} Failed"
-    echo "${yellow}! WARNING: Running \"brew doctor\" detected issues with your Homebrew installation that could impact ACT3 Login.${normal}"
+    failure "Failed"
+    warning_yellow "WARNING: Running \"brew doctor\" detected issues with your Homebrew installation that could impact ACT3 Login."
     finish_tasks+=("- Fix issues identified by running ${bold}brew doctor${normal}")
   fi
 
   # Update Homebrew's catalog so the latest verison of dependencies are installed
   echo -n "Running \"brew update\"... "
   # eat "brew update" failure because it could fail for act3/ace-tools tap
-  brew update >/dev/null 2>&1 && echo "$green_check" || echo "${yellow}! Non-fatal error${normal}"
+  if log_eval brew update; then
+    echo "$green_check"
+  else
+    warning_yellow "Failed"
+  fi
 }
 
 system_check
@@ -168,81 +117,12 @@ validate_homebrew
 
 # CHECK IF dev-tools IS INSTALLED AND EXPLAIN HOW TO UNINSTALL
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >/dev/null 2>&1; then
-  echo "${yellow}! WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\"${normal}"
+  warning_yellow "WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\""
 fi
-
-# Ensures a Homebrew formula is installed
-brew_install() {
-  # Check if installed: brew list
-  #  If installed, upgrade: brew upgrade
-  #  If not installed, install: brew install
-  if brew list "$1" >/dev/null 2>&1; then
-    success "$1 already installed"
-    # Formula is already installed, upgrade it
-    brew upgrade "$1" >/dev/null 2>&1 || warning "Could not upgrade ${1}."
-  else
-    # Formula is not installed, install it
-    if output=$(brew install "$1" 2>&1); then
-      success "Installed $1"
-    else
-      failure_red "Failed to install required dependency ${1}."
-      echo
-      echo "Output of \"brew install ${1}\":"
-      echo
-      echo "$output"
-      echo
-      abort # Fail if dependency cannot be met
-    fi
-  fi
-}
 
 ############################################################
 # Token entry                                              #
 ############################################################
-
-box_out() {
-  # Initialize vars
-  local s=("$@") b w
-
-  # Iterate over arguments to find longest line and its length
-  for l in "${s[@]}"; do
-    # Sanitize line so format characters are not counted
-    plain=$(sanitize "$l")
-    ((w<${#plain})) && { b="$plain"; w="${#plain}"; }
-  done
-  # Output top border by replacing characters in longest string with dash
-  echo ".-${b//?/-}-."
-  for l in "${s[@]}"; do
-    # Calculate padding size without format characters
-    plain=$(sanitize "$l")
-    padding=$((w-${#plain}+1))
-    printf '| %s%*s|\n' "$l" "-$padding" " "
-  done
-  # Output bottom border using same approach as top border
-  echo "'-${b//?/-}-'"
-}
-
-double_box_out() {
-  # Initialize vars
-  local s=("$@") b w
-
-  # Iterate over arguments to find longest line and its length
-  for l in "${s[@]}"; do
-    # Sanitize line so format characters are not counted
-    plain=$(sanitize "$l")
-    ((w<${#plain})) && { b="$plain"; w="${#plain}"; }
-  done
-  # Output top border by replacing characters in longest string with dash
-  echo "╔=${b//?/=}=╗"
-  for l in "${s[@]}"; do
-    # Calculate padding size without format characters
-    plain=$(sanitize "$l")
-    padding=$((w-${#plain}+1))
-    printf '║ %s%*s║\n' "$l" "-$padding" " "
-  done
-  # Output bottom border using same approach as top border
-  echo "╚=${b//?/=}=╝"
-}
 
 # Output instructions
 
@@ -281,17 +161,17 @@ brew_install "yq"
 
 token_valid="true"
 
-if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+if output=$(log_out "$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
-  token_name=$(echo "$output" | "$(brew --prefix)/bin/yq" '.name')
+  token_name=$(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.name')
   success "GitLab has token ${bold}${token_name}${normal}"
 
-  if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
+  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
     failure "Token ${bold}${token_name}${normal} has been revoked"
     token_valid="false"
   fi
 
-  if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
+  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
     failure "Token ${bold}${token_name}${normal} is inactive"
     token_valid="false"
   fi
@@ -300,7 +180,7 @@ if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request G
   # Done this way to combine a successful revoked/active check into one print
   [ $token_valid = "true" ] && success "Token is active"
 
-  if [[ $(echo "$output" | "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
+  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
     # ex: registry scope triggers registry login
     # ex: repository scope triggers git credential setup
     failure "Token ${bold}${token_name}${normal} does not have required \"api\" scope"
@@ -336,15 +216,15 @@ fi
 echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
 
-if output=$("$(brew --prefix)/opt/curl/bin/curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $TOKEN" \
+if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
   success "Downloaded the private script"
 
-  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script-private"
+  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script-private.sh"
   [ -f "$PRIVATE_SCRIPT" ] && rm "$PRIVATE_SCRIPT" # remove existing private script (if exists)
   mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
-  echo "$output" > "$PRIVATE_SCRIPT"
-  
+  echo "$output" >"$PRIVATE_SCRIPT"
+
   echo "Starting the private script... "
   echo
   # no error handling for this, exit as it exits
