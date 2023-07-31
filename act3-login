@@ -115,9 +115,6 @@ system_check
 validate_git
 validate_homebrew
 
-echo "Installing gum script tool..."
-brew_install "gum"
-
 # CHECK IF dev-tools IS INSTALLED AND EXPLAIN HOW TO UNINSTALL
 if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >/dev/null 2>&1; then
   warning_yellow "WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\""

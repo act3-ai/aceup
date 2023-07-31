@@ -200,10 +200,10 @@ brew_install() {
   # Check if installed: brew list
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
-  if gum spin --show-output --title "Checking for ${1}" -- log_eval brew list "$1"; then
+  if log_eval brew list "$1"; then
     success "${1} already installed"
     # Formula is already installed, upgrade it
-    gum spin --show-output --title "Upgrading ${1}" -- log_eval brew upgrade "$1" || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
+    log_eval brew upgrade "$1" || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
   else
     # Formula is not installed, install it
     if output=$(log_out brew install "$1"); then
