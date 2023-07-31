@@ -152,18 +152,26 @@ log_echo() {
 
 log_eval() {
   log_echo ""
-  log_echo "\$ $*"
+  log_echo "\$" "$@"
   "$@" >>"$LOG_FILE" 2>&1
 }
 
 log_out() {
   log_echo ""
-  log_echo "\$ $*"
+  log_echo "\$" "$@"
   output=$("$@" 2>&1)
   exit_code=$?
   log_echo "$output"
   echo "$output"
   return "$exit_code"
+}
+
+log_spin() {
+  log_eval gum spin --show-output "$@"
+}
+
+log_spin_out() {
+  log_out gum spin --show-output "$@"
 }
 
 create_log_file() {
@@ -200,13 +208,13 @@ brew_install() {
   # Check if installed: brew list
   #  If installed, upgrade: brew upgrade
   #  If not installed, install: brew install
-  if gum spin --show-output --title "Checking for ${1}" -- log_eval brew list "$1"; then
+  if log_spin --title "Checking for ${1}" brew list "$1"; then
     success "${1} already installed"
     # Formula is already installed, upgrade it
-    gum spin --show-output --title "Upgrading ${1}" -- log_eval brew upgrade "$1" || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
+    log_spin --title "Upgrading ${1}" brew upgrade "$1" || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
   else
     # Formula is not installed, install it
-    if output=$(log_out brew install "$1"); then
+    if output=$(log_spin brew install "$1"); then
       success "Installed $1"
     else
       failure_red "Failed to install required dependency ${1}."
