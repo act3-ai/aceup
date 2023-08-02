@@ -4,6 +4,9 @@
 ############################################################
 # This is the setup component of the ACT3 Login Script
 # Formatting tools and helper functions are set
+# Use by adding the following line
+#  to the beginning of your script:
+# source <(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
 ############################################################
 ############################################################
 
@@ -167,8 +170,8 @@ log_out() {
 }
 
 create_log_file() {
-  [ -f "$LOG_FILE" ] && rm "$LOG_FILE"                       # remove existing log file (if exists)
-  mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$LOG_FILE" # create new log file
+  [ -f "$LOG_FILE" ] && rm "$LOG_FILE"                   # remove existing log file (if exists)
+  mkdir -p "$(dirname "$LOG_FILE")" && touch "$LOG_FILE" # create new log file
   log_echo "ACT3 Login Logs: $(date "+%D %T")"
   success "Created log file ${bold}${LOG_FILE}${normal}"
 }

@@ -14,11 +14,16 @@
 # Have command error out on any command failure
 set -e
 
+# Initialize finishing tasks
 finish_tasks=()
 
+# -f, --fail               Fail fast with no output on HTTP errors
+# -s, --silent             Silent mode
+# -S, --show-error         Show error even when -s is used
+# -L, --location           Follow redirects
+# -N, --no-buffer          Disable buffering of the output stream
 # shellcheck source=utils/pre.sh
-source <(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
-# source utils/pre.sh
+source <(curl -fsSLN https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
 
 ############################################################
 # Preparation                                              #
