@@ -17,13 +17,18 @@ set -e
 # Initialize finishing tasks
 finish_tasks=()
 
+# Curl flags:
 # -f, --fail               Fail fast with no output on HTTP errors
 # -s, --silent             Silent mode
 # -S, --show-error         Show error even when -s is used
 # -L, --location           Follow redirects
-# -N, --no-buffer          Disable buffering of the output stream
+
+pre_script="/tmp/act3-login-pre.sh"
+mkdir -p "$(dirname "$pre_script")"
+curl -fsSL -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
 # shellcheck source=utils/pre.sh
-source <(curl -fsSLN https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh)
+source "$pre_script"
+rm "$pre_script"
 
 ############################################################
 # Preparation                                              #
