@@ -168,6 +168,8 @@ echo -n "Installing curl to request token information... "
 brew_install "curl"
 echo -n "Installing yq to check response... "
 brew_install "yq"
+echo -n "Installing timeout for long running commands... "
+brew_install "coreutils"
 
 token_valid="true"
 
