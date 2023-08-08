@@ -11,7 +11,7 @@
 ############################################################
 
 ############################################################
-# Global setup                                             #
+# Global setup
 ############################################################
 
 # Set no auto update for this script
@@ -21,7 +21,7 @@ HOMEBREW_PREFIX=$(brew --prefix)
 curl="${HOMEBREW_PREFIX}/opt/curl/bin/curl"
 
 ############################################################
-# Output formatting setup                                  #
+# Output formatting setup
 ############################################################
 
 # Initialize text formatting shortcuts
@@ -56,7 +56,7 @@ failure_red() {
 }
 
 ############################################################
-# Box outlines setup                                       #
+# Box outlines setup
 ############################################################
 
 sanitize() {
@@ -121,7 +121,7 @@ double_box_out() {
 }
 
 ############################################################
-# Log file and XDG Directories                             #
+# Log file and XDG Directories
 ############################################################
 
 # System Check: Set XDG dirs and WSL variable
@@ -195,7 +195,7 @@ abort() {
 }
 
 ############################################################
-# Homebrew functions                                       #
+# Homebrew functions
 ############################################################
 
 # Ensures a Homebrew formula is installed
