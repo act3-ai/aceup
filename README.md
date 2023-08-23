@@ -6,8 +6,8 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
 
 - Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows is only supported through WSL2**)
 - ACT3 Active Directory account
-- User account with sudo priveleges on your system
-  - List your sudo priveleges with `sudo -l`
+- User account with sudo privileges on your system
+  - List your sudo privilege with `sudo -l`
 - [curl](https://everything.curl.dev/) installed
   - Check your system for curl with `which curl`
   - If missing, follow system-specific instructions from *Everything curl*: [Install curl](https://everything.curl.dev/get)
