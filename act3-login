@@ -24,11 +24,9 @@ finish_tasks=()
 # -L, --location           Follow redirects
 
 pre_script="/tmp/act3-login-pre.sh"
-mkdir -p "$(dirname "$pre_script")"
-curl -fsSL -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
+curl -fsSL --create-dirs -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
 # shellcheck source=utils/pre.sh
-source "$pre_script"
-rm "$pre_script"
+source "$pre_script" && rm "$pre_script"
 
 ############################################################
 # Preparation
