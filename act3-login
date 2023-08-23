@@ -53,19 +53,15 @@ echo
 echo "${bold}Checking prerequisites${normal}"
 
 system_check() {
-  # Default XDG directories used in the script
-  echo -n "Checking OS type... "
-  if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    success "Detected OS type Linux"
-    # DETERMINE IF TERMINAL IS RUNNING IN WSL
-    # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
-    if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
-      success "Detected Windows Subsystem for Linux (WSL) installation"
-    fi
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    success "Detected OS type macOS"
+  echo -n "Checking system... "
+  if is_wsl; then
+    success "Detected Linux running on WSL"
+  elif is_linux; then
+    success "Detected Linux"
+  elif is_macos; then
+    success "Detected macOS"
   else
-    warning_yellow "WARNING: Unsupported OS type \"${OSTYPE}\""
+    warning_yellow "Detected unsupported OS \"${OSTYPE}\""
   fi
 }
 
@@ -124,7 +120,7 @@ validate_git
 validate_homebrew
 
 # CHECK IF dev-tools IS INSTALLED AND EXPLAIN HOW TO UNINSTALL
-if [[ "$OSTYPE" == "linux-gnu" ]] && dpkg -s dev-tools >/dev/null 2>&1; then
+if is_linux && dpkg -s dev-tools >/dev/null 2>&1; then
   warning_yellow "WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\""
 fi
 

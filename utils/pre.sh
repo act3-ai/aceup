@@ -121,21 +121,46 @@ double_box_out() {
 }
 
 ############################################################
+# System Checks
+############################################################
+
+# Check if running macOS
+is_macos() {
+  [[ "$OSTYPE" == "darwin"* ]]
+}
+
+# Check if runnning Linux (true for WSL)
+# shellcheck disable=SC2317
+is_linux() {
+  [[ "$OSTYPE" == "linux-gnu" ]]
+}
+
+# Check if running Linux on WSL
+# shellcheck disable=SC2317
+is_wsl() {
+  # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
+  is_linux && [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version
+}
+
+# Check if running Linux not on WSL
+# shellcheck disable=SC2317
+is_linux_no_wsl() {
+  is_linux && ! is_wsl
+}
+
+############################################################
 # Log file and XDG Directories
 ############################################################
 
 # System Check: Set XDG dirs and WSL variable
 IS_WSL=false
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
+if is_linux; then
   XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
   XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-  # CHECKS IF RUNNING IN WSL
-  # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
-  if [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version; then
-    # success "Detected Windows Subsystem for Linux (WSL) installation"
+  if is_wsl; then
     IS_WSL=true
   fi
-elif [[ "$OSTYPE" == "darwin"* ]]; then
+elif is_macos; then
   XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
   XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/Library/Application Support}"
 else
