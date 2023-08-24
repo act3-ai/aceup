@@ -223,7 +223,7 @@ echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
 
 if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
-  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=main"); then
+  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=master"); then
   success "Downloaded the private script"
 
   PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script-private.sh"
