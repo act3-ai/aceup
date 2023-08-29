@@ -2,10 +2,45 @@
 
 ############################################################
 ############################################################
-# This is the public component of the ACT3 Login Script
-# Prerequisites are verified and token entry is requested.
+# Entrypoint of the ACT3 Login Script.
+# - Verifies system prerequisites
+# - Prompts for token entry
+# - Validates token
+# - Downloads and runs the private component
 ############################################################
 ############################################################
+
+############################################################
+# Help
+############################################################
+Help() {
+  # Display Help
+  echo "ACT3 Login logs users into ACT3 services."
+  echo
+  echo "Syntax: $(basename "$0") [-t] [-h]"
+  echo "options:"
+  echo "t     Testing mode."
+  echo "h     Print this Help."
+  echo
+}
+
+############################################################
+# Process the input options. Add options as needed.
+############################################################
+# Get the options
+while getopts "u:t:h" flag; do
+  case "${flag}" in
+  h) # display Help
+    Help
+    exit
+    ;;
+  t)
+    TEST="$OPTARG"
+    echo "Running in test mode, will use \"$TEST\" as private script"
+    ;;
+  *) echo "Invalid option: -$flag" ;;
+  esac
+done
 
 ############################################################
 # Global setup
@@ -23,7 +58,7 @@ finish_tasks=()
 # -S, --show-error         Show error even when -s is used
 # -L, --location           Follow redirects
 
-pre_script="/tmp/act3-login-pre.sh"
+pre_script="/tmp/aceup-pre.sh"
 curl -fsSL --create-dirs -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
 # shellcheck source=utils/pre.sh
 source "$pre_script" && rm "$pre_script"
@@ -43,6 +78,8 @@ echo "$blue"'
 
 echo "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 echo
+CACHE="$XDG_CACHE_HOME/aceup/act3-login"
+LOG_FILE="$CACHE/logs.txt"
 create_log_file
 
 ############################################################
@@ -162,12 +199,10 @@ echo -n "Installing curl to request token information... "
 brew_install "curl"
 echo -n "Installing yq to check response... "
 brew_install "yq"
-echo -n "Installing timeout for long running commands... "
-brew_install "coreutils"
 
 token_valid="true"
 
-if output=$(log_out "$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
+if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
   token_name=$(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.name')
   success "GitLab has token ${bold}${token_name}${normal}"
@@ -222,24 +257,30 @@ fi
 echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
 
-if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
-  "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=master"); then
-  success "Downloaded the private script"
+PRIVATE_SCRIPT="$CACHE/script-private.sh"
+[ -f "$PRIVATE_SCRIPT" ] && rm "$PRIVATE_SCRIPT" # remove existing private script (if exists)
 
-  PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script-private.sh"
-  [ -f "$PRIVATE_SCRIPT" ] && rm "$PRIVATE_SCRIPT" # remove existing private script (if exists)
-  mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
-  echo "$output" >"$PRIVATE_SCRIPT"
+# Download private script unless in test mode
+if [[ -z "${TEST}" ]]; then
+  if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
+    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=master"); then
 
-  echo "Starting the private script... "
-  echo
-  # no error handling for this, exit as it exits
-  "$PRIVATE_SCRIPT" -t "$(printf '%s' "$TOKEN")"
+    echo "$output" >"$PRIVATE_SCRIPT"
+    chmod +x "$PRIVATE_SCRIPT"
+  else
+    failure "Couldn't download the private script"
+    echo
+    echo "GitLab responded with:"
+    echo "$output"
+    echo
+    abort
+  fi
 else
-  failure "Couldn't download the private script"
-  echo
-  echo "GitLab responded with:"
-  echo "$output"
-  echo
-  abort
+  # Copy the test file to the cache location
+  cp "$TEST" "$PRIVATE_SCRIPT"
+  chmod +x "$PRIVATE_SCRIPT"
 fi
+
+# shellcheck source=../aceup/act3-login-private
+source "$PRIVATE_SCRIPT"
+rm "$PRIVATE_SCRIPT"

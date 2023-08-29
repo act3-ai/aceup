@@ -168,8 +168,6 @@ else
   XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 fi
 
-LOG_FILE="$XDG_CACHE_HOME/act3/login/logs.txt"
-
 redact() {
   echo "${*/$TOKEN/\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*}"
 }
@@ -197,7 +195,7 @@ log_out() {
 create_log_file() {
   [ -f "$LOG_FILE" ] && rm "$LOG_FILE"                   # remove existing log file (if exists)
   mkdir -p "$(dirname "$LOG_FILE")" && touch "$LOG_FILE" # create new log file
-  log_echo "ACT3 Login Logs: $(date "+%D %T")"
+  log_echo "Logs - $(date "+%D %T")"
   success "Created log file ${bold}${LOG_FILE}${normal}"
 }
 
