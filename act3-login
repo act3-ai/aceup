@@ -78,6 +78,8 @@ echo "$blue"'
 
 echo "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 echo
+CACHE="$XDG_CACHE_HOME/aceup/act3-login"
+LOG_FILE="$CACHE/logs.txt"
 create_log_file
 
 ############################################################
@@ -255,7 +257,7 @@ fi
 echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
 
-PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script-private.sh"
+PRIVATE_SCRIPT="$CACHE/script-private.sh"
 [ -f "$PRIVATE_SCRIPT" ] && rm "$PRIVATE_SCRIPT" # remove existing private script (if exists)
 
 # Download private script unless in test mode
