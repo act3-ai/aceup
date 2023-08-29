@@ -58,7 +58,7 @@ finish_tasks=()
 # -S, --show-error         Show error even when -s is used
 # -L, --location           Follow redirects
 
-pre_script="/tmp/act3-login-pre.sh"
+pre_script="/tmp/aceup-pre.sh"
 curl -fsSL --create-dirs -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
 # shellcheck source=utils/pre.sh
 source "$pre_script" && rm "$pre_script"
