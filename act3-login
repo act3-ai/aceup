@@ -167,7 +167,7 @@ brew_install "coreutils"
 
 token_valid="true"
 
-if output=$(log_out "$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
+if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
   token_name=$(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.name')
   success "GitLab has token ${bold}${token_name}${normal}"
@@ -222,7 +222,9 @@ fi
 echo
 echo "${bold}Handing off to private ACT3 Login script${normal}"
 
-if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
+PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script-private.sh"
+
+if output=$("$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=master"); then
   success "Downloaded the private script"
 
@@ -231,10 +233,12 @@ if output=$("$curl" -s --fail-with-body --request GET --header "PRIVATE-TOKEN: $
   mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
   echo "$output" >"$PRIVATE_SCRIPT"
 
-  echo "Starting the private script... "
-  echo
-  # no error handling for this, exit as it exits
-  "$PRIVATE_SCRIPT" -t "$(printf '%s' "$TOKEN")"
+  # echo "Starting the private script... "
+  # echo
+
+  # shellcheck source=../aceup/act3-login-private
+  source "$PRIVATE_SCRIPT"
+  rm "$PRIVATE_SCRIPT"
 else
   failure "Couldn't download the private script"
   echo
