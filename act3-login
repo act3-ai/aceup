@@ -162,8 +162,6 @@ echo -n "Installing curl to request token information... "
 brew_install "curl"
 echo -n "Installing yq to check response... "
 brew_install "yq"
-echo -n "Installing timeout for long running commands... "
-brew_install "coreutils"
 
 token_valid="true"
 
@@ -224,17 +222,13 @@ echo "${bold}Handing off to private ACT3 Login script${normal}"
 
 PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script-private.sh"
 
-if output=$("$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
+if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
   "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=master"); then
-  success "Downloaded the private script"
 
   PRIVATE_SCRIPT="$XDG_CACHE_HOME/act3/login/script-private.sh"
   [ -f "$PRIVATE_SCRIPT" ] && rm "$PRIVATE_SCRIPT" # remove existing private script (if exists)
   mkdir -p "$XDG_CACHE_HOME/act3/login" && touch "$PRIVATE_SCRIPT" && chmod +x "$PRIVATE_SCRIPT"
   echo "$output" >"$PRIVATE_SCRIPT"
-
-  # echo "Starting the private script... "
-  # echo
 
   # shellcheck source=../aceup/act3-login-private
   source "$PRIVATE_SCRIPT"
