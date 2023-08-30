@@ -1,25 +1,4 @@
-# ACEup
-
-ACEup contains public scripts to bootstrap the ACE installation process, such as ACT3 Login.
-
-## Prerequisites
-
-- Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows is only supported through WSL2**)
-- ACT3 Active Directory account
-- User account with sudo privileges on your system
-  - List your sudo privileges with `sudo -l`
-- [curl](https://everything.curl.dev/) installed
-  - Check your system for curl with `which curl`
-  - If missing, follow system-specific instructions from *Everything curl*: [Install curl](https://everything.curl.dev/get)
-- [Git](https://git-scm.com) installed
-  - Check your system for Git with `which git`
-  - If missing, follow system-specific instructions from Git: [Installing Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [Homebrew](https://brew.sh/) installed
-  - Check your system for Homebrew with `which brew`
-  - If missing, install with [Homebrew's installation script](https://brew.sh/) (*be sure to complete tasks under **Next Steps***)
-  - Check your installation of Homebrew by running `brew doctor`
-
-## ACT3 Login
+# ACT3 Login
 
 ACT3 Login is designed to:
 
@@ -39,7 +18,24 @@ ACT3 Login does the following:
   - ACE Hub
     - User must import the generated User Configuration file on ACE Hub
 
-### Run ACT3 Login
+## Prerequisites
+
+- Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows is only supported through WSL2**)
+- ACT3 Active Directory account
+- User account with sudo privileges on your system
+  - List your sudo privileges with `sudo -l`
+- [curl](https://everything.curl.dev/) installed
+  - Check your system for curl with `which curl`
+  - If missing, follow system-specific instructions from *Everything curl*: [Install curl](https://everything.curl.dev/get)
+- [Git](https://git-scm.com) installed
+  - Check your system for Git with `which git`
+  - If missing, follow system-specific instructions from Git: [Installing Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [Homebrew](https://brew.sh/) installed
+  - Check your system for Homebrew with `which brew`
+  - If missing, install with [Homebrew's installation script](https://brew.sh/) (*be sure to complete tasks under **Next Steps***)
+  - Check your installation of Homebrew by running `brew doctor`
+
+## Run ACT3 Login
 
 ```sh
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
@@ -47,7 +43,7 @@ ACT3 Login does the following:
 
 > Check [prerequisites](#prerequisites) before running.
 
-## New User Setup
+### New User Setup
 
 After running the login script above, new users also need to run the following commands for your system set up to work at ACT3 by installing the ACE Tools collection:
 
@@ -56,7 +52,7 @@ After running the login script above, new users also need to run the following c
 brew install ace-tools
 ```
 
-### Features
+## Features
 
 ACT3 Login uses your entered credentials to do the following:
 
@@ -70,7 +66,7 @@ ACT3 Login uses your entered credentials to do the following:
 - **OPTIONAL:** Set up ACT3 Kubernetes cluster access
 - **OPTIONAL:** Create a Kubernetes Secret in the user's namespace
 
-### Caveats
+## Caveats
 
 - ACT3 Login configures tools installed by Homebrew. Alternate installations of the same tools configured by ACT3 Login will produce unexpected behavior after running the script.
 - Existing configuration for some affected applications can override ACT3 Login's changes.

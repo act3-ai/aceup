@@ -60,7 +60,7 @@ finish_tasks=()
 
 pre_script="/tmp/aceup-pre.sh"
 curl -fsSL --create-dirs -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
-# shellcheck source=utils/pre.sh
+# shellcheck source=../utils/pre.sh
 source "$pre_script" && rm "$pre_script"
 
 ############################################################
@@ -263,7 +263,7 @@ PRIVATE_SCRIPT="$CACHE/script-private.sh"
 # Download private script unless in test mode
 if [[ -z "${TEST}" ]]; then
   if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
-    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login-private/raw?ref=master"); then
+    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login/act3-login-private/raw?ref=master"); then
 
     echo "$output" >"$PRIVATE_SCRIPT"
     chmod +x "$PRIVATE_SCRIPT"
