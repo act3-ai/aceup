@@ -263,7 +263,7 @@ PRIVATE_SCRIPT="$CACHE/script-private.sh"
 # Download private script unless in test mode
 if [[ -z "${TEST}" ]]; then
   if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
-    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login/act3-login-private/raw?ref=master"); then
+    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login%2Fact3-login-private/raw?ref=master"); then
 
     echo "$output" >"$PRIVATE_SCRIPT"
     chmod +x "$PRIVATE_SCRIPT"
