@@ -52,6 +52,10 @@ set -e
 # Initialize finishing tasks
 finish_tasks=()
 
+# For testing purposes:
+# Allow setting a different branch with env variable "ACT3_LOGIN_BRANCH"
+BRANCH="${ACT3_LOGIN_BRANCH:-main}"
+
 # Curl flags:
 # -f, --fail               Fail fast with no output on HTTP errors
 # -s, --silent             Silent mode
@@ -59,7 +63,7 @@ finish_tasks=()
 # -L, --location           Follow redirects
 
 pre_script="/tmp/aceup-pre.sh"
-curl -fsSL --create-dirs -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
+curl -fsSL --create-dirs -o "$pre_script" "https://raw.githubusercontent.com/act3-ace/aceup/$BRANCH/utils/pre.sh"
 # shellcheck source=../utils/pre.sh
 source "$pre_script" && rm "$pre_script"
 
@@ -260,10 +264,15 @@ echo "${bold}Handing off to private ACT3 Login script${normal}"
 PRIVATE_SCRIPT="$CACHE/script-private.sh"
 [ -f "$PRIVATE_SCRIPT" ] && rm "$PRIVATE_SCRIPT" # remove existing private script (if exists)
 
+# For testing purposes:
+# Allow setting a different branch with env variable "ACT3_LOGIN_BRANCH"
+# Must be defaulted to "master" here because private ACEup uses "master" to comply with Homebrew Formula requirements
+BRANCH="${ACT3_LOGIN_BRANCH:-master}"
+
 # Download private script unless in test mode
 if [[ -z "${TEST}" ]]; then
   if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
-    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login%2Fact3-login-private/raw?ref=master"); then
+    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login%2Fact3-login-private/raw?ref=$BRANCH"); then
 
     echo "$output" >"$PRIVATE_SCRIPT"
     chmod +x "$PRIVATE_SCRIPT"
@@ -281,6 +290,6 @@ else
   chmod +x "$PRIVATE_SCRIPT"
 fi
 
-# shellcheck source=../aceup/act3-login-private
+# shellcheck source=../../aceup/act3-login/act3-login-private
 source "$PRIVATE_SCRIPT"
 rm "$PRIVATE_SCRIPT"
