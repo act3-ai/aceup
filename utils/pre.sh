@@ -260,3 +260,18 @@ brew_upgrade() {
   fi
   # FAILED UPGRADE SHOULD NOT EXIT THE SCRIPT
 }
+
+############################################################
+# Semver Functions
+############################################################
+
+major_version() {
+  echo "${1%%.*}" # Remove everything after the first period
+}
+
+minor_version() {
+  major="$(major_version "$1")" # Evaluate the major version
+  nomajor="${1#"$major".}"      # Trim major version and period from start of string
+  minor="${nomajor%.*}"         # Remove everything after the first period
+  echo "${minor%%[^0-9]*}"      # Remove any non-numerical suffix for patches
+}
