@@ -33,9 +33,10 @@ ACT3 Login does the following:
 - Adds the ACT3 Homebrew Tap for access to internal tools
 - Authentication for the following:
   - Git over SSH and HTTPS
+  - Git commit signing with SSH (optional)
   - ACT3 GitLab Container Registry
   - ACT3 Project Tool (`act3-pt`)
-  - ACT3 Kubernetes clusters
+  - ACT3 Kubernetes clusters (optional)
   - ACE Hub
     - User must import the generated User Configuration file on ACE Hub
 
