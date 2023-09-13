@@ -266,8 +266,7 @@ PRIVATE_SCRIPT="$CACHE/script-private.sh"
 
 # For testing purposes:
 # Allow setting a different branch with env variable "ACT3_LOGIN_BRANCH"
-# Must be defaulted to "master" here because private ACEup uses "master" to comply with Homebrew Formula requirements
-BRANCH="${ACT3_LOGIN_BRANCH:-master}"
+BRANCH="${ACT3_LOGIN_BRANCH:-main}"
 
 # Download private script unless in test mode
 if [[ -z "${TEST}" ]]; then
