@@ -33,12 +33,13 @@ ACT3 Login does the following:
 - Adds the ACT3 Homebrew Tap for access to internal tools
 - Authentication for the following:
   - Git over SSH and HTTPS
-  - Git commit signing with SSH (optional)
+    - Optional: Enable commit signing with SSH
   - ACT3 GitLab Container Registry
   - ACT3 Project Tool (`act3-pt`)
-  - ACT3 Kubernetes clusters (optional)
   - ACE Hub
     - User must import the generated User Configuration file on ACE Hub
+  - Optional: ACT3 Kubernetes cluster access
+    - Creates a Kubernetes Secret in the user's namespace
 
 ### Run ACT3 Login
 
@@ -63,6 +64,7 @@ ACT3 Login uses your entered credentials to do the following:
 
 - Enable secure credential storage for Git and container registry authentication
 - Authenticate Git over SSH and HTTPS for the ACT3 GitLab
+- **OPTIONAL:** Enables Git commit signing with SSH
 - Store credentials for the ACT3 GitLab Container Registry to be used by tools like ACE Data Tool, Podman, Crane, and Docker
 - Add the ACT3 ACE Tools Homebrew tap, a catalog of tools used at ACT3, including internal tools like ACE Data Tool and ACT3 Project Tool
 - Log into the ACT3 GitLab instance with ACT3 Project Tool
