@@ -148,6 +148,11 @@ is_linux_no_wsl() {
   is_linux && ! is_wsl
 }
 
+# Checks /etc/os-release to determine if running Ubuntu 22.04
+is_ubuntu_22() {
+  is_linux && [ -f "/etc/os-release" ] && grep -q '22.04' /etc/os-release
+}
+
 ############################################################
 # Log file and XDG Directories
 ############################################################
