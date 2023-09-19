@@ -138,8 +138,9 @@ is_linux() {
 # Check if running Linux on WSL
 # shellcheck disable=SC2317
 is_wsl() {
-  # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
-  is_linux && [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version
+  is_linux &&
+    # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
+    [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version
 }
 
 # Check if running Linux not on WSL
@@ -148,9 +149,15 @@ is_linux_no_wsl() {
   is_linux && ! is_wsl
 }
 
-# Checks /etc/os-release to determine if running Ubuntu 22.04
+# Checks /etc/os-release for "ubuntu"
+is_ubuntu() {
+  is_linux &&
+    [ -f /etc/os-release ] && grep -qi 'ubuntu' /etc/os-release
+}
+
+# Checks /etc/os-release for "22.04" to determine if running Ubuntu 22.04
 is_ubuntu_22() {
-  is_linux && [ -f "/etc/os-release" ] && grep -q '22.04' /etc/os-release
+  is_ubuntu && grep -q '22.04' /etc/os-release
 }
 
 ############################################################
