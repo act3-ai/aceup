@@ -65,7 +65,7 @@ ACT3 Login uses your entered credentials to do the following:
 - Enable secure credential storage for Git and container registry authentication
 - Authenticate Git over SSH and HTTPS for the ACT3 GitLab
 - **OPTIONAL:** Enables Git commit signing with SSH
-- Store credentials for the ACT3 GitLab Container Registry to be used by tools like ACE Data Tool, Podman, Crane, and Docker
+- Store credentials for the ACT3 GitLab Container Registry to be used by tools like ACE Data Tool, Podman, and Docker
 - Add the ACT3 ACE Tools Homebrew tap, a catalog of tools used at ACT3, including internal tools like ACE Data Tool and ACT3 Project Tool
 - Log into the ACT3 GitLab instance with ACT3 Project Tool
 - Direct ACE Data Tool to use the ACT3 Telemetry server
