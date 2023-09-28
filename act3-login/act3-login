@@ -282,8 +282,9 @@ BRANCH="${ACT3_LOGIN_BRANCH:-main}"
 
 # Download private script unless in test mode
 if [[ -z "${TEST}" ]]; then
-  if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
-    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login%2Fact3-login-private/raw?ref=$BRANCH"); then
+  # TODO: remove this from logs, we are logging the entire private script lol
+  if output=$("$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
+    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login%2Fact3-login-private/raw?ref=$BRANCH" 2>&1); then
 
     echo "$output" >"$PRIVATE_SCRIPT"
     chmod +x "$PRIVATE_SCRIPT"
