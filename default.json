@@ -10,7 +10,8 @@
 		"regexManagers:helmChartYamlAppVersions",
 		":docker",
 		"github>act3-ace/aceup:imageRepoBaseGitlabCI",
-		"github>act3-ace/aceup:makefile"
+		"github>act3-ace/aceup:taskfileVersionComment",
+		"github>act3-ace/aceup:makefileVersionComment"
 	],
 	"prConcurrentLimit": 99,
 	"branchConcurrentLimit": 99

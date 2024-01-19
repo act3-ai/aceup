@@ -1,0 +1,7 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"description": "Check for renovate comments in Taskfiles",
+	"extends": [
+		"github>act3-ace/aceup:yamlComment((^|/)[Tt]askfile(?:\\.dist)?\\.ya?ml$)"
+	]
+}
