@@ -1,0 +1,15 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"description": "Check for renovate hash comments in a file matching <code>{{arg0}}</code>",
+	"customManagers": [
+		{
+			"customType": "regex",
+			"fileMatch": [
+				"{{arg0}}"
+			],
+			"matchStrings": [
+				"# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (?:lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?\\s+[A-Za-z0-9_]+?_VERSION\\s*:\\s*[\"']?(?<currentValue>.+?)[\"']?\\s"
+			]
+		}
+	]
+}

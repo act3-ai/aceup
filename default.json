@@ -1,0 +1,17 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": [
+		"config:recommended",
+		":semanticCommits",
+		":semanticPrefixFix",
+		":prHourlyLimitNone",
+		"regexManagers:dockerfileVersions",
+		"regexManagers:gitlabPipelineVersions",
+		"regexManagers:helmChartYamlAppVersions",
+		":docker",
+		"github>act3-ace/aceup:imageRepoBaseGitlabCI",
+		"github>act3-ace/aceup:makefile"
+	],
+	"prConcurrentLimit": 99,
+	"branchConcurrentLimit": 99
+}
