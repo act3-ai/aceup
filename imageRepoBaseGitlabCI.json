@@ -1,7 +1,0 @@
-{
-	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
-	"description": "Update image tags in GitLab CI files, even if prefixed with the IMAGE_REPO_BASE variable",
-	"extends": [
-		"github>act3-ace/aceup:imageRepoBase(\\.gitlab-ci\\.ya?ml$)"
-	]
-}
