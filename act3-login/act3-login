@@ -841,7 +841,7 @@ authenticate() {
   fi
 
   # Upgrade Homebrew Formulae again now that we are authenticated to the ACT3 Homebrew Tap
-  echo "Upgrading ACT3 Homebrew Formulae:"
+  echo "Updating ACT3 Homebrew Tap:"
 
   echo -n "   Running brew update... "
   {
@@ -948,11 +948,8 @@ EOF
   echo "${bold}Install the latest DoD CA Certificates${normal}"
 
   install_dod_certs() {
-    echo -n "Installing the ACEup utilities... "
-    brew_install "aceup"
-
     echo "Running the dod-certs script"
-    "$HOMEBREW_PREFIX/bin/dod-certs"
+    /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/dod-certs/dod-certs)"
   }
 
   read -r -p "Do you wish to proceed?
