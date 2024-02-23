@@ -29,20 +29,20 @@ ACT3 Login will automatically:
 Run the [ACT3 Login script](./act3-login/README.md):
 
 <!-- act3-pt ./act3-login/README.md section:run-act3-login -->
-<!-- timestamp:2024-02-23,17:00:20 -->
+<!-- timestamp:2024-02-23,17:03:13 -->
 ```sh
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
 
-> Check [prerequisites](./act3-login/README.md#prerequisites) before running.
+> Check [prerequisites](#prerequisites) before running.
 
 ### New User Setup
 
-After running the login script above, new users also need to run the following commands for your system set up to work at ACT3 by installing the ACE Tools collection:
+After running the login script above, new users should also consider installing common ASCE Tools by running the `install-asce-tools` command:
 
 ```sh
-# Install ACE Tools
-brew install ace-tools
+# Install common ASCE tools
+brew install-asce-tools
 ```
 <!-- act3-pt end -->
 
@@ -55,6 +55,7 @@ Run the [`enable-smart-card-reader` script](./enable-smart-card-reader).
 ```sh
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
+
 <!-- act3-pt end -->
 
 > Read more about smart card usage on Linux: [smart-card-reader/README.md](./smart-card-reader/README.md)
