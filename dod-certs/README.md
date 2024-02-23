@@ -20,9 +20,9 @@ After the **DoD Certificates script** has run and the certificates have been tru
 
 It is recommended to use the [ACT3 Login script](../act3-login/README.md) to install the DoD certs. If you would like to run the `dod-certs` script by itself, follow the [standalone usage instructions](#standalone-usage) below.
 
-Run the [ACT3 Login script](https://github.com/act3-ace/aceup#aceup) and confirm **Yes** to the install dod-certs prompt.
+Run the [ACT3 Login script](../act3-login/README.md) and confirm **Yes** when asked to install the DoD certs.
 
-> Note: ensure that the [prerequisites for the ACT3 Login script](https://github.com/act3-ace/aceup#prerequisites) are met.
+> Note: ensure that the [prerequisites for the ACT3 Login script](../act3-login/README.md#prerequisites) are met.
 
 <!-- act3-pt https://github.com/act3-ace/aceup.git file:README.md lines:46-48 -->
 <!-- ref:b93a637fe804ccc80ec62cedfec1184d00a07930 -->
@@ -32,6 +32,8 @@ Run the [ACT3 Login script](https://github.com/act3-ace/aceup#aceup) and confirm
 <!-- act3-pt end -->
 
 ## Standalone Usage
+
+Run the [`dod-certs` script](./dod-certs) in standalone form:
 
 ```sh
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/dod-certs/dod-certs)"

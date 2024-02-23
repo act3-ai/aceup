@@ -26,9 +26,9 @@ ACT3 Login will automatically:
 - Ask to run the DoD Certs script
 - Add ACT3 Homebrew tap (enabling access to ACT3 software packages)
 
-> Note: ensure that the [prerequisites for the ACT3 Login script](act3-login/README.md#prerequisites) are met.
+> Note: ensure that the [prerequisites for the ACT3 Login script](./act3-login/README.md#prerequisites) are met.
 
-Run the [ACT3 Login script](https://github.com/act3-ace/aceup#aceup):
+Run the [ACT3 Login script](./act3-login/README.md):
 
 <!-- act3-pt ./act3-login/README.md section:run-act3-login -->
 <!-- ref:b93a637fe804ccc80ec62cedfec1184d00a07930 -->
