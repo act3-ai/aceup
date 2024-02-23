@@ -47,11 +47,11 @@ ACT3 Login does the following:
 
 ### New User Setup
 
-After running the login script above, new users also need to run the following commands for your system set up to work at ACT3 by installing the ACE Tools collection:
+After running the login script above, new users should also consider installing common ASCE Tools by running the `install-asce-tools` command:
 
 ```sh
-# Install ACE Tools
-brew install ace-tools
+# Install common ASCE tools
+brew install-asce-tools
 ```
 
 ## Features

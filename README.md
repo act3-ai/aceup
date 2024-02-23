@@ -26,8 +26,6 @@ ACT3 Login will automatically:
 - Ask to run the DoD Certs script
 - Add ACT3 Homebrew tap (enabling access to ACT3 software packages)
 
-> Note: ensure that the [prerequisites for the ACT3 Login script](./act3-login/README.md#prerequisites) are met.
-
 Run the [ACT3 Login script](./act3-login/README.md):
 
 <!-- act3-pt ./act3-login/README.md section:run-act3-login -->
@@ -36,7 +34,7 @@ Run the [ACT3 Login script](./act3-login/README.md):
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
 
-> Check [prerequisites](#prerequisites) before running.
+> Check [prerequisites](./act3-login/README.md#prerequisites) before running.
 
 ### New User Setup
 
@@ -47,12 +45,6 @@ After running the login script above, new users also need to run the following c
 brew install ace-tools
 ```
 <!-- act3-pt end -->
-
-Next, install ASCE Tools with the `install-asce-tools` command:
-
-```sh
-brew install-asce-tools
-```
 
 <!-- act3-pt ./smart-card-reader/README.md section:recommended-usage -->
 <!-- timestamp:2024-02-23,17:00:20 -->
