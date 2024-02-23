@@ -18,7 +18,9 @@ The ACEup repository is a collection of script-based tools and resources to boot
 
 ## Usage
 
-It is recommended users run the [ACT3 Login script](./act3-login/README.md) to begin the bootstrap process.
+### ACT3 Login
+
+It is recommended users run the [ACT3 Login script](./act3-login/README.md) to authenticate to ACT3's services.
 
 ACT3 Login will automatically:
 
@@ -45,6 +47,8 @@ After running the login script above, new users should also consider installing 
 brew install-asce-tools
 ```
 <!-- act3-pt end -->
+
+### Smart Card Reader Setup
 
 <!-- act3-pt ./smart-card-reader/README.md section:recommended-usage -->
 <!-- timestamp:2024-02-23,17:00:20 -->
