@@ -13,8 +13,8 @@ The ACEup repository is a collection of script-based tools and resources to boot
 - [ACT3 Login script](./act3-login/README.md)
 - [DoD Certs script](./dod-certs/README.md)
 - [Smart Card Reader script](./smart-card-reader/README.md)
-
-> Only users running Ubuntu 22.04 will need to run the Smart Card Reader (SRC) script.
+  
+  > Only users running Ubuntu will need to run the Smart Card Reader (SRC) script.
 
 ## Usage
 
