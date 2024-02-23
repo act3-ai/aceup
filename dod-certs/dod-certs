@@ -2,19 +2,51 @@
 set -e
 
 ############################################################
+# Utilities
+############################################################
+
+# Initialize text formatting shortcuts
+bold=$(tput bold)
+normal=$(tput sgr0)
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+
+success() {
+  echo "${green}✓${normal} ${1}"
+}
+
+warning() {
+  echo "${yellow}! ${1}${normal}"
+}
+
+failure() {
+  echo "${red}✗ ${1}${normal}"
+}
+
+# Check if running macOS
+is_macos() {
+  [[ "$OSTYPE" == "darwin"* ]]
+}
+
+# Check if runnning Linux (true for WSL)
+is_linux() {
+  [[ "$OSTYPE" == "linux-gnu" ]]
+}
+
+# Check if running Linux on WSL
+is_wsl() {
+  is_linux &&
+    # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
+    [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version
+}
+
+############################################################
 # Prerequisites
 ############################################################
 
-pre_script="/tmp/aceup-pre.sh"
-curl -fsSL --create-dirs -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
-# shellcheck source=../utils/pre.sh
-source "$pre_script" && rm "$pre_script"
-
 CACHE="$XDG_CACHE_HOME/ace/aceup/dod-certs"
 rm -rf "$CACHE" && mkdir -p "$CACHE"
-
-LOG_FILE="$CACHE/logs.txt"
-create_log_file
 
 # System Check
 echo -n "Checking system... "
@@ -25,7 +57,7 @@ elif is_linux; then
 elif is_macos; then
   success "Detected macOS"
 else
-  warning_yellow "Detected unsupported OS \"${OSTYPE}\""
+  warning "Detected unsupported OS \"${OSTYPE}\""
 fi
 
 ############################################################
@@ -53,7 +85,7 @@ is_macos && shaprogram="shasum -a 512 --check --status" # use shasum program on 
 if echo "$checksum  $download" | $shaprogram; then
   success "Downloaded certificate package $download"
 else
-  failure_red "Checksum verification failed! Deleting downloaded file and aborting."
+  failure "Checksum verification failed! Deleting downloaded file and aborting."
   rm "$download"
   echo
   echo "Aborting"
@@ -185,4 +217,4 @@ fi
 ############################################################
 # TODO: validate the certificates with an openssl command
 ############################################################
-# openssl s_client -connect dle.afrl.mil:443 -CApath PATH
+# openssl s_client -connect example.com:443 -CApath PATH
