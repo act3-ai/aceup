@@ -1,11 +1,5 @@
 # ACEup
 
-ACEup contains public scripts to bootstrap the ACE installation process, such as ACT3 Login.
-
-## Intended Audience
-
-This repository is targeted to users who need to authenticate and configure their macOS, Ubuntu 22.04, or WSL2 (running Ubuntu 22.04) machines for work in the ACT3 environment.
-
 ## Overview
 
 The ACEup repository is a collection of script-based tools and resources to bootstrap access to ACT3 services. The following tools are contained in this repo:
@@ -13,8 +7,8 @@ The ACEup repository is a collection of script-based tools and resources to boot
 - [ACT3 Login script](./act3-login/README.md)
 - [DoD Certs script](./dod-certs/README.md)
 - [Smart Card Reader script](./smart-card-reader/README.md)
-  
-  > Only users running Ubuntu will need to run the Smart Card Reader (SRC) script.
+
+This repository is intended for users who need to authenticate and configure their macOS, Ubuntu 22.04, or WSL2 (running Ubuntu 22.04) machines for work in the ACT3 environment.
 
 ## Usage
 
