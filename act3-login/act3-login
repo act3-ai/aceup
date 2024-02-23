@@ -560,7 +560,7 @@ fi
 
 authenticate() {
   USERNAME=$1
-  TOKEN=$1
+  TOKEN=$2
 
   ############################################################
   # Git SSH Credentials
