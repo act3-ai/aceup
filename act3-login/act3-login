@@ -302,6 +302,6 @@ else
   chmod +x "$PRIVATE_SCRIPT"
 fi
 
-# shellcheck source=../../aceup/act3-login/act3-login-private
+# shellcheck disable=SC1090
 source "$PRIVATE_SCRIPT"
 rm "$PRIVATE_SCRIPT"

@@ -1,0 +1,188 @@
+#!/bin/bash
+set -e
+
+############################################################
+# Prerequisites
+############################################################
+
+pre_script="/tmp/aceup-pre.sh"
+curl -fsSL --create-dirs -o "$pre_script" https://raw.githubusercontent.com/act3-ace/aceup/main/utils/pre.sh
+# shellcheck source=../utils/pre.sh
+source "$pre_script" && rm "$pre_script"
+
+CACHE="$XDG_CACHE_HOME/ace/aceup/dod-certs"
+rm -rf "$CACHE" && mkdir -p "$CACHE"
+
+LOG_FILE="$CACHE/logs.txt"
+create_log_file
+
+# System Check
+echo -n "Checking system... "
+if is_wsl; then
+  success "Detected Linux running on WSL"
+elif is_linux; then
+  success "Detected Linux"
+elif is_macos; then
+  success "Detected macOS"
+else
+  warning_yellow "Detected unsupported OS \"${OSTYPE}\""
+fi
+
+############################################################
+# Download latest DoD certs
+############################################################
+
+echo
+echo "${bold}Downloading DoD Certificates${normal}"
+
+echo "Downloading from https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_DoD.zip"
+
+# Save the download
+download="$CACHE/unclass-certificates_pkcs7_DoD.zip"
+
+curl -fsSL \
+  "https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_DoD.zip" \
+  -o "$download"
+
+# Verify the download's integrity with a checksum
+# Checksum string below will need to be updated each time new certificates are released
+checksum="2d2e0ae2c035b5842766b4e468f81907405f194f15955be27894781fbeda4803fa3027363c51bbf19853a8dba03bc0dc28b8a95e1a7a6436d121e1b0cacede7a"
+shaprogram="sha512sum --check --status"
+is_macos && shaprogram="shasum -a 512 --check --status" # use shasum program on macs
+
+if echo "$checksum  $download" | $shaprogram; then
+  success "Downloaded certificate package $download"
+else
+  failure_red "Checksum verification failed! Deleting downloaded file and aborting."
+  rm "$download"
+  echo
+  echo "Aborting"
+  exit 1
+fi
+
+# Unzip the download
+unzip -q "$download" -d "$CACHE"
+success "Unzipped certificate package to $CACHE/certificates_pkcs7_v5_13_dod"
+
+############################################################
+# Certificate parsing
+############################################################
+
+# Use OpenSSL to write the certificates in ".crt" format
+openssl pkcs7 -in "$CACHE/certificates_pkcs7_v5_13_dod/certificates_pkcs7_v5_13_dod_der.p7b" -inform der -print_certs -out "$CACHE/dod_CAs.pem"
+
+# Parse the "dod_CAs.pem" file:
+# Separate each individual certificate into its own file
+# After parsing, there should be 25 cert files
+# Read certificate chain file line-by-line
+cert_file="" # Store current filename outside the loop
+while read -r line; do
+  [[ -z "$line" ]] && continue # Skip line if empty
+
+  # Start of new certificate is signalled by "subject="
+  # Change the "cert_file" variable to start writing to a new file
+  if [[ "$line" == "subject="* ]]; then
+    cn=${line#*"CN = "}                    # Get the Certificate Name (CN) from the subject line
+    cn=${line#*"CN="}                      # Duplicate of line 84! OpenSSL version 3.2 changed how the files parse
+    cert_file="$CACHE/${cn// /_}.crt"      # Set cert_file to the CN with spaces replaced by underscores
+    [ -f "$cert_file" ] && rm "$cert_file" # Remove the cert file if it already exists
+  fi
+
+  # Write last line without newline lines except end
+  if [[ "$line" == "-----END CERTIFICATE-----" ]]; then
+    echo -n "$line" >>"$cert_file"
+    continue
+  fi
+
+  # Write line to cert file
+  echo "$line" >>"$cert_file"
+done <"$CACHE/dod_CAs.pem"
+success "Generated individual certificate files"
+
+############################################################
+# Install Certificates (system-dependent)
+############################################################
+
+# The "sudo -- bash -c" syntax is a way to run multiple commands as sudo with only one password prompt
+#  From:
+
+echo
+echo "${bold}Installing DoD Certificates${normal}"
+
+function macos_add_certs() {
+  certs="$1"
+
+  ############################################################
+  # Add CA certificates to macOS system
+  ############################################################
+
+  # On macOS, certificates are:
+  # - Stored in the system keychain (a secure database on the system)
+  # - Configured with trust policies for each specific use case
+
+  # Iterate over each Root CA
+  # Call "security add-trusted-cert" for each Root CA
+  # "find -print0" and "xargs -0" are designed to pipe to each other
+  #   and are easier to write as a one-liner to pass to "sudo -- bash -c"
+  echo "Adding DoD Certs to macOS Keychain"
+  echo "Requesting sudo permissions"
+
+  # List of policies from "man security" ("security help add-trusted-cert" is out of date, missing timestamping)
+  # Exclude policies that don't apply: "iChat" "pkinitClient" "pkinitServer"
+  policies=("ssl" "smime" "codeSign" "IPSec" "basic" "swUpdate" "pkgSign" "eap" "timestamping")
+  policy_flags=""
+  for policy in "${policies[@]}"; do
+    policy_flags="$policy_flags-p $policy "
+  done
+
+  # -d              Add to admin cert store; default is user.
+  # -p policy       Specify policy constraint (ssl, smime, codeSign, IPSec, basic, swUpdate, pkgSign, eap, macappstore, appleID, timestamping).
+  # -r resultType   resultType = trustRoot|trustAsRoot|deny|unspecified; default is trustRoot.
+  # -k keychain     Specify keychain to which cert is added.
+  sudo -- bash -c "\
+echo 'System may ask for authentication for each certificate:'; \
+find $certs -print0 | xargs -0rt -L 1 security add-trusted-cert -d -r trustRoot $policy_flags -k /Library/Keychains/System.keychain"
+  success "Added certificates to macOS Keychain"
+}
+
+function linux_add_certs() {
+  certs="$1"
+
+  ############################################################
+  # Add CA certificates to Linux system
+  ############################################################
+  # Well documented reference:
+  # https://superuser.com/a/719047
+
+  # On Linux, certificates are:
+  # - Stored in PEM format
+  # - Named with the ".crt" file extension
+  # - Placed in the directory "/usr/local/share/ca-certificates"
+  # - Added to the system certificate store by "update-ca-certificates"
+
+  # Use a subdirectory for the DoD certs for easy cleanup
+  ca_dir=/usr/local/share/ca-certificates/DoD
+
+  # 1. Remove any existing DoD certificates
+  # 2. Copy the cert files into the system location
+  # 3. Run "update-ca-certificates" to add the certs to system cert store
+  echo "Adding DoD Certs to the system CA Certs"
+  echo "Requesting sudo permissions"
+  sudo -- bash -c "\
+rm -rf $ca_dir;\
+mkdir -p $ca_dir;\
+cp $CACHE/DoD_Root_CA_*.crt $ca_dir;\
+update-ca-certificates"
+  success "Updated system certificates"
+}
+
+if is_macos; then
+  macos_add_certs "$CACHE/DoD_Root_CA_*.crt"
+else
+  linux_add_certs "$CACHE/DoD_Root_CA_*.crt"
+fi
+
+############################################################
+# TODO: validate the certificates with an openssl command
+############################################################
+# openssl s_client -connect dle.afrl.mil:443 -CApath PATH

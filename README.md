@@ -2,6 +2,20 @@
 
 ACEup contains public scripts to bootstrap the ACE installation process, such as ACT3 Login.
 
+## Intended Audience
+
+This repository is targeted to users who need to authenticate and configure their macOS, Ubuntu 22.04, or WSL2 (running Ubuntu 22.04) machines for work in the ACT3 environment.
+
+## Overview
+
+The ACEup repository is a collection of script-based tools and resources to bootstrap access to ACT3 services. The following tools are contained in this repo:
+
+- [ACT3 Login script](./act3-login/README.md)
+- [DoD Certs script](./dod-certs/README.md)
+- [Smart Card Reader script](./smart-card-reader/README.md)
+
+> Only users running Ubuntu 22.04 will need to run the Smart Card Reader (SRC) script.
+
 ## Prerequisites
 
 - Linux, macOS, or WSL2 running Ubuntu 22.04 (**Windows is only supported through WSL2**)
@@ -18,6 +32,98 @@ ACEup contains public scripts to bootstrap the ACE installation process, such as
   - Check your system for Homebrew with `which brew`
   - If missing, install with [Homebrew's installation script](https://brew.sh/) (*be sure to complete tasks under **Next Steps***)
   - Check your installation of Homebrew by running `brew doctor`
+
+## Usage
+
+It is recommended users run the ACT3 Login script to begin the bootstrap process.
+
+### Recommend Usage
+
+ACT3 Login will automatically:
+
+- Prompt users to run the DoD Certs script
+- Install ACT3 Homebrew tap (enabling access to scripts in this repo)
+
+> Note: ensure that the [prerequisites for the ACT3 Login script](https://github.com/act3-ace/aceup#prerequisites) are met.
+
+Run the [ACT3 Login script](https://github.com/act3-ace/aceup#aceup):
+
+<!-- act3-pt https://github.com/act3-ace/aceup.git file:README.md lines:46-48 -->
+<!-- ref:b93a637fe804ccc80ec62cedfec1184d00a07930 -->
+```sh
+/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
+```
+<!-- act3-pt end -->
+
+Next, install ACEup:
+
+```sh
+brew install aceup
+```
+
+Optionally, for Ubuntu users, run the smart card reader script:
+
+```sh
+enable-smart-card-reader
+```
+
+### Optional Usage
+
+#### ACT3 Homebrew Tap
+
+Add the [ACT3's Homebrew tap](https://git.act3-ace.com/ace/homebrew-ace-tools) to brew the ACEup formula and run a ACEup script.
+
+Add the ACT3 Tap:
+
+<!-- act3-pt https://git.act3-ace.com/ace/homebrew-ace-tools.git file:README.md lines:14-20 -->
+<!-- ref:bff1c411f9b7bbdec15466b411a39edde5a93771 -->
+```sh
+# SSH Authentication
+brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git
+
+# HTTPS Authentication
+brew tap act3/ace-tools https://git.act3-ace.com/ace/homebrew-ace-tools.git
+```
+<!-- act3-pt end -->
+
+Next, install ACEup:
+
+```sh
+brew install aceup
+```
+
+Then, run the desired script:
+
+```sh
+# Run the ACT3 Login script
+act3-login
+
+# Install current DoD certs
+dod-certs
+
+# Install smart card reader tools for Ubuntu
+enable-smart-card-reader
+```
+
+#### Clone Repo and Run
+
+Clone the [ACEup](https://git.act3-ace.com/ace/aceup) repository to your machine using SSH or HTTPS:
+
+```sh
+# SSH Authentication
+git clone git@git.act3-ace.com:ace/aceup.git
+
+# HTTPS Authentication
+git clone https://git.act3-ace.com/ace/aceup.git
+```
+
+Then, point to and run the desired script:
+
+```sh
+cd aceup
+
+./<path to script>
+```
 
 ## ACT3 Login
 
