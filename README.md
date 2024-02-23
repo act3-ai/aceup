@@ -34,7 +34,7 @@ Run the [ACT3 Login script](./act3-login/README.md):
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
 
-> Check [prerequisites](#prerequisites) before running.
+> Check [prerequisites](./act3-login/README.md#prerequisites) before running.
 
 ### New User Setup
 
@@ -50,17 +50,16 @@ brew install-asce-tools
 <!-- timestamp:2024-02-23,17:00:20 -->
 Ubuntu users who need to install and configure their system to work with a smart card reader should complete the following:
 
-Run the [`enable-smart-card-reader` script](./enable-smart-card-reader).
+Run the [`enable-smart-card-reader` script](./smart-card-reader/enable-smart-card-reader).
 
 ```sh
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
-
 <!-- act3-pt end -->
 
 > Read more about smart card usage on Linux: [smart-card-reader/README.md](./smart-card-reader/README.md)
 
-### Optional Usage
+## Optional Usage: Clone Repo and Run
 
 Clone the [ACEup](https://github.com/act3-ace/aceup) repository to your system:
 

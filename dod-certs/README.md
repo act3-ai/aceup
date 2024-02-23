@@ -24,13 +24,11 @@ Run the [ACT3 Login script](../act3-login/README.md) and confirm **Yes** when as
 
 > Note: ensure that the [prerequisites for the ACT3 Login script](../act3-login/README.md#prerequisites) are met.
 
-<!-- act3-pt https://github.com/act3-ace/aceup.git file:README.md lines:46-48 -->
+<!-- act3-pt ../act3-login/README.md lines:42-45 -->
 <!-- ref:b93a637fe804ccc80ec62cedfec1184d00a07930 -->
 ```sh
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
-
-
 <!-- act3-pt end -->
 
 ## Standalone Usage
