@@ -1,0 +1,46 @@
+name: Support Ticket
+description: File a support ticket
+title: "[Support]: "
+labels: ["support", "triage"]
+assignees:
+  - justenstall
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this support ticket!
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we get in touch with you if we need more info?
+      placeholder: ex. email@example.com
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+      value: "A bug happened!"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    validations:
+      required: true
+    attributes:
+      label: What operating system are you seeing the problem on?
+      multiple: true
+      options:
+        - Ubuntu 22.04 (full installation)
+        - macOS
+        - Windows running Ubuntu 22.04 on WSL2
+        - Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: Text

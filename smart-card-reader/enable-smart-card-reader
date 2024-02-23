@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -e
+
+# shellcheck disable=SC2317
+if [[ "$OSTYPE" == "darwin"* ]]; then
+	echo "CAC does not need to be setup for macOS, exiting."
+	exit 0
+fi
+
+set -x
+
+############################################################
+# Linux: Install OpenSC and CACKey
+############################################################
+
+# Install OpenSC
+# OpenSC provides a set of libraries and utilities to work with smart cards
+sudo apt install opensc -y
+
+# Check the card reader slot
+pkcs11-tool -L
+
+# Ensure that pcscd is set to start on boot
+systemctl enable pcscd.socket
+
+# Install middleware to read the CAC
+sudo apt install libpcsclite1 libccid libpcsc-perl pcsc-tools libnss3-tools -y
+
+# Get cackey; this may not be the most recent version but it is the version required for this process
+wget http://cackey.rkeene.org/download/0.7.5/cackey_0.7.5-1_amd64.deb
+
+# Install cackey
+sudo apt install ./cackey_0.7.5-1_amd64.deb -y --allow-downgrades

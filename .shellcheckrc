@@ -1,1 +1,5 @@
+# Check contents of sourced files
 external-sources=true
+
+# Suggest ${VAR} in place of $VAR
+# enable=require-variable-braces

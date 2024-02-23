@@ -1,0 +1,11 @@
+config:
+  default: true
+  line-length: false
+  code-block-style:
+    style: fenced
+
+globs:
+  - "**/*.{md,markdown}"
+
+# ignores:
+#   - "CHANGELOG.md"

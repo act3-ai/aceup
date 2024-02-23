@@ -43,7 +43,9 @@ while getopts "u:t:h" flag; do
 done
 
 ############################################################
-# Global setup
+############################################################
+# Global variables and shell config
+############################################################
 ############################################################
 
 # Have command error out on any command failure
@@ -52,23 +54,272 @@ set -e
 # Initialize finishing tasks
 finish_tasks=()
 
-# For testing purposes:
-# Allow setting a different branch with env variable "ACT3_LOGIN_BRANCH"
-BRANCH="${ACT3_LOGIN_BRANCH:-main}"
+# Set no auto update for this script
+# shellcheck disable=SC2034
+HOMEBREW_NO_AUTO_UPDATE=1
+HOMEBREW_PREFIX=$(brew --prefix)
+curl="${HOMEBREW_PREFIX}/opt/curl/bin/curl"
 
-# Curl flags:
-# -f, --fail               Fail fast with no output on HTTP errors
-# -s, --silent             Silent mode
-# -S, --show-error         Show error even when -s is used
-# -L, --location           Follow redirects
-
-pre_script="/tmp/aceup-pre.sh"
-curl -fsSL --create-dirs -o "$pre_script" "https://raw.githubusercontent.com/act3-ace/aceup/$BRANCH/utils/pre.sh"
-# shellcheck source=../utils/pre.sh
-source "$pre_script" && rm "$pre_script"
+# Initialize text formatting shortcuts
+bold=$(tput bold)
+normal=$(tput sgr0)
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
+green_check="${green}✓${normal}"
+yellow_excl="${yellow}!${normal}"
+red_x="${red}✗${normal}"
 
 ############################################################
+############################################################
+# Global functions
+############################################################
+############################################################
+# This is the setup component of the ACT3 Login Script
+# Formatting tools and helper functions are set
+
+success() {
+  echo "${green_check} ${1}"
+}
+
+warning() {
+  echo "${yellow_excl} ${1}"
+}
+
+warning_yellow() {
+  echo "${yellow_excl}${yellow} ${1}${normal}"
+}
+
+failure() {
+  echo "${red_x} ${1}"
+}
+
+failure_red() {
+  echo "${red_x}${red} ${1}${normal}"
+}
+
+############################################################
+# Box outlines setup
+############################################################
+
+sanitize() {
+  # https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html#:~:text=%24%7Bparameter//pattern/string%7D
+  result="$1"
+  result="${result//$bold/}"
+  result="${result//$normal/}"
+  result="${result//$red/}"
+  result="${result//$green/}"
+  result="${result//$yellow/}"
+  echo "${result//$blue/}"
+}
+
+box_out() {
+  # Initialize vars
+  local s=("$@") b w
+
+  # Iterate over arguments to find longest line and its length
+  for l in "${s[@]}"; do
+    # Sanitize line so format characters are not counted
+    plain=$(sanitize "$l")
+    ((w < ${#plain})) && {
+      b="$plain"
+      w="${#plain}"
+    }
+  done
+  # Output top border by replacing characters in longest string with dash
+  echo ".-${b//?/-}-."
+  for l in "${s[@]}"; do
+    # Calculate padding size without format characters
+    plain=$(sanitize "$l")
+    padding=$((w - ${#plain} + 1))
+    printf '| %s%*s|\n' "$l" "-$padding" " "
+  done
+  # Output bottom border using same approach as top border
+  echo "'-${b//?/-}-'"
+}
+
+double_box_out() {
+  # Initialize vars
+  local s=("$@") b w
+
+  # Iterate over arguments to find longest line and its length
+  for l in "${s[@]}"; do
+    # Sanitize line so format characters are not counted
+    plain=$(sanitize "$l")
+    ((w < ${#plain})) && {
+      b="$plain"
+      w="${#plain}"
+    }
+  done
+  # Output top border by replacing characters in longest string with dash
+  echo "╔=${b//?/=}=╗"
+  for l in "${s[@]}"; do
+    # Calculate padding size without format characters
+    plain=$(sanitize "$l")
+    padding=$((w - ${#plain} + 1))
+    printf '║ %s%*s║\n' "$l" "-$padding" " "
+  done
+  # Output bottom border using same approach as top border
+  echo "╚=${b//?/=}=╝"
+}
+
+############################################################
+# System Checks
+############################################################
+
+# Check if running macOS
+is_macos() {
+  [[ "$OSTYPE" == "darwin"* ]]
+}
+
+# Check if runnning Linux (true for WSL)
+# shellcheck disable=SC2317
+is_linux() {
+  [[ "$OSTYPE" == "linux-gnu" ]]
+}
+
+# Check if running Linux on WSL
+# shellcheck disable=SC2317
+is_wsl() {
+  is_linux &&
+    # https://github.com/microsoft/WSL/issues/423#issuecomment-221627364
+    [ -f /proc/version ] && grep -qi 'microsoft\|wsl' /proc/version
+}
+
+# Check if running Linux not on WSL
+# shellcheck disable=SC2317
+is_linux_no_wsl() {
+  is_linux && ! is_wsl
+}
+
+# Checks /etc/os-release for "ubuntu"
+is_ubuntu() {
+  is_linux &&
+    [ -f /etc/os-release ] && grep -qi 'ubuntu' /etc/os-release
+}
+
+# Checks /etc/os-release for "22.04" to determine if running Ubuntu 22.04
+is_ubuntu_22() {
+  is_ubuntu && grep -q '22.04' /etc/os-release
+}
+
+############################################################
+# Log file and XDG Directories
+############################################################
+
+redact() {
+  echo "${*/$TOKEN/\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*}"
+}
+
+log_echo() {
+  redact "$@" >>"$LOG_FILE"
+}
+
+log_eval() {
+  log_echo ""
+  log_echo "\$ $*"
+  "$@" >>"$LOG_FILE" 2>&1
+}
+
+log_out() {
+  log_echo ""
+  log_echo "\$ $*"
+  output=$("$@" 2>&1)
+  exit_code=$?
+  log_echo "$output"
+  echo "$output"
+  return "$exit_code"
+}
+
+create_log_file() {
+  [ -f "$LOG_FILE" ] && rm "$LOG_FILE"                   # remove existing log file (if exists)
+  mkdir -p "$(dirname "$LOG_FILE")" && touch "$LOG_FILE" # create new log file
+  log_echo "Logs - $(date "+%D %T")"
+  success "Created log file ${bold}${LOG_FILE}${normal}"
+}
+
+append_to_file() {
+  mkdir -p "$(dirname "$1")" && touch -a "$1" # ensure file exists
+  echo "$2" >>"$1"                            # concatenate to file
+}
+
+check_logs() {
+  box_out "Check log file: ${bold}${LOG_FILE}${normal}" \
+    "Troubleshooting: ${bold}https://github.com/act3-ace/aceup/blob/main/docs/troubleshooting-faq.md${normal}" \
+    "Create Support Ticket: ${bold}https://git.act3-ace.com/ace/aceup/-/issues/new?issuable_template=Support%20Ticket${normal}"
+}
+
+abort() {
+  echo "Aborting."
+  echo
+  check_logs
+  exit 1
+}
+
+############################################################
+# Homebrew functions
+############################################################
+
+# Ensures a Homebrew formula is installed
+brew_install() {
+  # Check if installed: brew list
+  #  If installed, upgrade: brew upgrade
+  #  If not installed, install: brew install
+  if log_eval brew list "$1"; then
+    success "${1} already installed"
+    # Formula is already installed, upgrade it
+    log_eval brew upgrade "$1" || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
+  else
+    # Formula is not installed, install it
+    if output=$(log_out brew install "$1"); then
+      success "Installed $1"
+    else
+      failure_red "Failed to install required dependency ${1}."
+      echo
+      echo "Output of ${bold}brew install ${1}${normal}:"
+      echo "$output"
+      echo
+      abort # Fail if dependency cannot be met
+    fi
+  fi
+}
+
+# Upgrades a homebrew dependency if it is installed
+brew_upgrade() {
+  # Check if installed: brew list
+  #  If installed, upgrade: brew upgrade
+  #  If not installed, return without error
+  if log_eval brew list "$1"; then
+    # Formula is already installed, upgrade it
+    if log_eval brew upgrade "$1"; then
+      success "Upgraded ${1}"
+    else
+      warning "Failed to upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
+    fi
+  fi
+  # FAILED UPGRADE SHOULD NOT EXIT THE SCRIPT
+}
+
+############################################################
+# Semver Functions
+############################################################
+
+major_version() {
+  echo "${1%%.*}" # Remove everything after the first period
+}
+
+minor_version() {
+  major="$(major_version "$1")" # Evaluate the major version
+  nomajor="${1#"$major".}"      # Trim major version and period from start of string
+  minor="${nomajor%.*}"         # Remove everything after the first period
+  echo "${minor%%[^0-9]*}"      # Remove any non-numerical suffix for patches
+}
+
+############################################################
+############################################################
 # Preparation
+############################################################
 ############################################################
 
 echo "$blue"'
@@ -82,12 +333,25 @@ echo "$blue"'
 
 echo "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 echo
+
+# System Checks: Set XDG dirs for OS type
+if is_linux; then
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+elif is_macos; then
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/Library/Application Support}"
+else
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+fi
+
 CACHE="$XDG_CACHE_HOME/aceup/act3-login"
 LOG_FILE="$CACHE/logs.txt"
 create_log_file
 
 ############################################################
-# Verify Prerequisites                                     #
+# Verify Prerequisites
 ############################################################
 
 echo
@@ -178,7 +442,9 @@ if is_linux && dpkg -s dev-tools >/dev/null 2>&1; then
 fi
 
 ############################################################
-# Token entry                                              #
+############################################################
+# Token entry
+############################################################
 ############################################################
 
 # Output instructions
@@ -218,17 +484,18 @@ brew_install "yq"
 
 token_valid="true"
 
-if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
+if token_response=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
   "https://git.act3-ace.com/api/v4/personal_access_tokens/self"); then
-  token_name=$(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.name')
+  token_name=$(echo "$token_response" | log_out "$(brew --prefix)/bin/yq" '.name')
   success "GitLab has token ${bold}${token_name}${normal}"
 
-  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
+  # Validations
+  if [[ $(echo "$token_response" | log_out "$(brew --prefix)/bin/yq" '.revoked') == "true" ]]; then
     failure "Token ${bold}${token_name}${normal} has been revoked"
     token_valid="false"
   fi
 
-  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
+  if [[ $(echo "$token_response" | log_out "$(brew --prefix)/bin/yq" '.active') != "true" ]]; then
     failure "Token ${bold}${token_name}${normal} is inactive"
     token_valid="false"
   fi
@@ -237,13 +504,33 @@ if output=$(log_out "$curl" -sSL --fail-with-body --request GET --header "PRIVAT
   # Done this way to combine a successful revoked/active check into one print
   [ $token_valid = "true" ] && success "Token is active"
 
-  if [[ $(echo "$output" | log_out "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
+  if [[ $(echo "$token_response" | log_out "$(brew --prefix)/bin/yq" 'contains({"scopes": [ "api" ]})') != "true" ]]; then
     # ex: registry scope triggers registry login
     # ex: repository scope triggers git credential setup
     failure "Token ${bold}${token_name}${normal} does not have required \"api\" scope"
     token_valid="false"
   else
     success "Token has \"api\" scope"
+  fi
+
+  # Parse user ID from token info
+  user_id=$(echo "$token_response" | log_out "$HOMEBREW_PREFIX/bin/yq" '.user_id')
+
+  # Request user info
+  if user_response=$(log_out "$curl" -sSL --fail-with-body \
+    --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
+    "https://git.act3-ace.com/api/v4/users/$user_id"); then
+    # Parse username from user info
+    USERNAME=$(echo "$user_response" | log_out "$HOMEBREW_PREFIX/bin/yq" '.username')
+    success "GitLab has username ${bold}${USERNAME}${normal}"
+  else
+    # Fail without user info
+    failure_red "User with ID $user_id not found on GitLab"
+    echo
+    echo "GitLab responded with:"
+    echo "$user_response"
+    echo
+    abort
   fi
 else
   token_valid="false"
@@ -267,41 +554,691 @@ if ! [ $token_valid = "true" ]; then
 fi
 
 ############################################################
-# Hand off to private script
+############################################################
+# Authentication portion of the script
+############################################################
 ############################################################
 
-echo
-echo "${bold}Handing off to private ACT3 Login script${normal}"
+authenticate() {
+  USERNAME=$1
+  TOKEN=$2
 
-PRIVATE_SCRIPT="$CACHE/script-private.sh"
-[ -f "$PRIVATE_SCRIPT" ] && rm "$PRIVATE_SCRIPT" # remove existing private script (if exists)
+  ############################################################
+  # Git SSH Credentials
+  ############################################################
 
-# For testing purposes:
-# Allow setting a different branch with env variable "ACT3_LOGIN_BRANCH"
-BRANCH="${ACT3_LOGIN_BRANCH:-main}"
+  echo
+  echo "${bold}Setting up Git SSH credentials for the ACT3 GitLab${normal}"
 
-# Download private script unless in test mode
-if [[ -z "${TEST}" ]]; then
-  # TODO: remove this from logs, we are logging the entire private script lol
-  if output=$("$curl" -sSL --fail-with-body --request GET --header "PRIVATE-TOKEN: ${TOKEN}" \
-    "https://git.act3-ace.com/api/v4/projects/1173/repository/files/act3-login%2Fact3-login-private/raw?ref=$BRANCH" 2>&1); then
+  # create .ssh and set permissions if it doesn't exist already
+  [ ! -d "${HOME}/.ssh" ] && mkdir "${HOME}/.ssh" && chmod 700 "${HOME}/.ssh"
 
-    echo "$output" >"$PRIVATE_SCRIPT"
-    chmod +x "$PRIVATE_SCRIPT"
+  ssh_key="${HOME}/.ssh/id_ecdsa"
+
+  # back up existing private key file
+  if [ -f "$ssh_key" ] && [ -f "$ssh_key.pub" ]; then
+    success "Using existing key pair"
+  elif [ -f "$ssh_key" ]; then
+    warning_yellow "WARNING: missing public key for ${bold}${ssh_key}${normal}"
+  elif [ -f "$ssh_key.pub" ]; then
+    warning_yellow "WARNING: missing private key for ${bold}${ssh_key}${normal}"
   else
-    failure "Couldn't download the private script"
+    # Generate SSH Key
+    log_eval ssh-keygen -f "$ssh_key" -t ecdsa -b 521 -C "Key for $(hostname -s) (created by ACT3 Login $(date "+%D %T"))" -N "" -q
+    success "Generated new key pair"
+  fi
+
+  echo "     Private key: ${bold}${ssh_key}${normal}"
+  echo "     Public key: ${bold}${ssh_key}.pub${normal}"
+
+  # Add public key to GitLab user
+  if output=$(log_out "$curl" -sSL --request POST --header "PRIVATE-TOKEN: ${TOKEN}" \
+    --form "title=Key for $(hostname -s) (uploaded by ACT3 Login)" \
+    --form "key=$(cat "$ssh_key.pub")" \
+    "https://git.act3-ace.com/api/v4/user/keys"); then
+    success "Uploaded public key to GitLab"
+  else
+    # https://docs.gitlab.com/ee/api/users.html#add-ssh-key
+    fingerprint=$(echo "$output" | log_out "$HOMEBREW_PREFIX/bin/yq" '.message.fingerprint')
+    key=$(echo "$output" | log_out "$HOMEBREW_PREFIX/bin/yq" '.message.key')
+
+    if [ "$key" = "has already been taken" ] || [ "$fingerprint" = "has already been taken" ]; then
+      success "Public key already uploaded to GitLab"
+    else
+      failure "Couldn't upload public key to GitLab"
+
+      # Print the response's "message" field if it exists
+      message=$(echo "$output" | log_out "$HOMEBREW_PREFIX/bin/yq" '.message' || echo "null")
+      if ! [ "$message" = "null" ]; then
+        echo
+        echo "   git.act3-ace.com responded with: ${message}"
+      fi
+
+      echo
+      abort
+    fi
+  fi
+
+  # ADD SERVER SSH PUBLIC KEYS TO KNOWN HOSTS FILE
+
+  fingerprints="|1|cnjAEj1IjAP/c2m2j3JMvEPVvQA=|DhrD6rUq6ks6233W+vhh95z3W34= ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUzrIr6PuFfU6QrZu97uPg0oAHbO29gzLle8yqZnka+lNgCav9zqkBdoS5bZzByu2fqPLVh3UEWIacgTmmXJBf5uCSD2cCz8DkVjdMrnr6oze+1RJlQRTOUslbbtwewdz0K3Ht1sPyYMNrbo6U4/4jb+9/OjATKTb5a1F8qI5SRsO/RppUtcmj+YplRSR+kepqv0DWShVmrVxSOklE3LXX0/u1PktF6r8hvLhcPCE1kc2LfBZ+ObSyu7PThv3AdwT5fMJZQj9cXfa8+mzXZ1KOcr2QDNLC/xvVCwMSevdwsVzkHl+WU+mmQAf4QrYUvBFOykGkQUKBaezAUv1rJ1kD
+|1|OE6ciBMluzNUcjYaxzE0YIG0ECQ=|SLTGzfKHSy2QUH47RKIe+VT8vMw= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBONjC6f0RqLZhbsFR9vf2tlqjUzaS4IqfkXEmKXv2IXBwaLw3l5T+63yfd92fh9RU9+4dLRcegsaxuK0LqE+16A=
+|1|gUO6KJnoyQgwav3x4+nsbRip+uA=|9w8tiX2NEVg9X8b9gmudBsb8rTw= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDhJqp0PIyynmq9oS/vy1Eb9TR5cFAYPzCWeVn42Bqcp"
+
+  # Remove existing fingerprints to avoid duplicates
+  if [ -s "$HOME/.ssh/known_hosts" ]; then
+    if log_eval ssh-keygen -R git.act3-ace.com; then
+      success "Backed up existing known_hosts file to $HOME/.ssh/known_hosts.old"
+    else
+      warning "Could not remove existing public keys for git.act3-ace.com"
+    fi
+  fi
+
+  # Store the fingerprints in ~/.ssh/known_hosts
+  append_to_file "$HOME/.ssh/known_hosts" "$fingerprints"
+  success "Stored public keys for git.act3-ace.com in $HOME/.ssh/known_hosts"
+
+  # Ensure SSH agent is running
+  if log_eval ssh-add -l; then
+    success "ssh-agent is running"
+  else
+    if [ "$?" == 2 ]; then
+      # Could not open a connection to your authentication agent.
+      double_box_out "${yellow}! WARNING: ssh-agent is not running on your system. ACT3 Login may be affected by this.${normal}"
+    fi
+  fi
+
+  ############################################################
+  # Git HTTPS Credentials
+  ############################################################
+
+  echo
+  echo "${bold}Setting up Git HTTPS credentials for the ACT3 GitLab${normal}"
+
+  # https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
+  if is_wsl; then
+    double_box_out "${yellow}! WARNING: SSH is recommended for Git on WSL.${normal}"
     echo
-    echo "GitLab responded with:"
-    echo "$output"
+    echo "Skipping HTTPS credential storage."
+  elif is_linux; then
+    # Install git-credential-libsecret
+    echo "Installing git-credential-libsecret for secure credential storage:"
+    brew_install "git-credential-libsecret"
+
+    log_eval git config --global credential.helper "libsecret"
+    success "Configured Git to use credential helper ${bold}libsecret${normal}"
+
+    if printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | log_eval "$HOMEBREW_PREFIX/bin/git-credential-libsecret" store; then
+      success "Stored Git HTTPS credentials for git.act3-ace.com"
+    else
+      failure_red "Could not store Git HTTPS credentials"
+      echo
+      check_logs
+    fi
+  elif is_macos; then
+    # if [[ $(command -v git) != "/usr/bin/git" ]]; then
+    #   warning "ACT3 recommends ${bold}/usr/bin/git${normal} for macOS, detected alternate installation of Git ${bold}$(command -v git)${normal}"
+    #   # echo "Remove ${bold}$(command -v git)${normal} and rerun ACT3 Login to use the macOS Keychain for Git."
+    #   # echo "${yellow}macOS Keychain credential storage is only available for ${bold}/usr/bin/git${normal}${yellow}, skipping HTTPS credential setup for Git.${normal}"
+    # fi
+
+    # "osxkeychain" comes with Git, no additional install needed
+    # https://git-scm.com/book/sv/v2/Git-Tools-Credential-Storage
+    log_eval git config --global credential.helper "osxkeychain"
+    success "Configured Git to use credential helper ${bold}osxkeychain${normal}"
+
+    if printf 'protocol=https\nhost=git.act3-ace.com\nusername=%s\npassword=%s\n' "$USERNAME" "$TOKEN" | log_eval git credential-osxkeychain store; then
+      success "Stored Git HTTPS credentials for git.act3-ace.com"
+    else
+      failure_red "Could not store Git HTTPS credentials"
+      echo
+      check_logs
+    fi
+  fi
+
+  ############################################################
+  # Git Commit Signing With SSH
+  ############################################################
+  # From:
+  # https://docs.gitlab.com/ee/user/project/repository/signed_commits/ssh.html#configure-git-to-sign-commits-with-your-ssh-key
+
+  echo
+  echo "${bold}Enable Git Commit Signing With SSH${normal}"
+
+  # Prerequisites:
+  # - Git 2.34.0 or newer
+  # - OpenSSH 8.0 or newer (not OpenSSH 8.7)
+  # - SSH Key with usage type including "Signing"
+
+  enable_ssh_commit_signing() {
+    # Check Git version >= 2.34.0
+    out="$(log_out git version)"  # "git version 2.42.0"
+    version="${out#git version }" # Remove prefix "git version "
+
+    if [[ $(major_version "$version") -lt 2 || $(minor_version "$version") -lt 34 ]]; then
+      warning "Git 2.34.0 or newer required for commit signing with SSH, you have version $version"
+      return 1
+    fi
+
+    # Check OpenSSH version >= 8.0
+    out="$(log_out ssh -V 2>&1)" # "OpenSSH_9.0p1, LibreSSL 3.3.6"
+    out="${out#OpenSSH_}"        # Remove prefix "OpenSSH_"
+    version="${out%%,*}"         # Remove suffix ", LibreSSL x.x.x"
+
+    # Guarantee greater than 8.0 (no need to check minor version here)
+    if [[ $(major_version "$version") -lt 8 ]]; then
+      warning "OpenSSH 8.0 or newer required for commit signing with SSH, you have version $version"
+      return 1
+    fi
+
+    # Give warning about OpenSSH 8.7
+    # Mentioned here: https://docs.gitlab.com/ee/user/project/repository/signed_commits/ssh.html#configure-git-to-sign-commits-with-your-ssh-key
+    if [[ $(major_version "$version") == 8 && $(minor_version "$version") == 7 ]]; then
+      warning_yellow "OpenSSH 8.7 has broken signing functionality, update to OpenSSH 8.8 or newer"
+      return 1
+    fi
+
+    success "System meets requirements for commit signing with SSH"
+
+    # Configure Git to use SSH for commit signing
+    git config --global gpg.format ssh
+
+    # Specify the id_ecdsa used by ACT3 Login as the signing key
+    git config --global user.signingkey "$ssh_key"
+
+    success "Configured Git to use $ssh_key to signing commits"
+
+    # Configure git to automatically sign commits
+    # Without this, user has to add "-S" to every commit command
+    git config --global commit.gpgsign true
+
+    success "Configured Git to automatically sign commits"
+  }
+
+  gpg_format="$(git config --global gpg.format || echo "")"
+  user_signingkey="$(git config --global user.signingkey || echo "")"
+  commit_gpgsign="$(git config --global commit.gpgsign || echo "")"
+
+  # Check if commit signing is already enabled globally
+  if [[ $gpg_format == "ssh" && $user_signingkey != "" && $commit_gpgsign == "true" ]]; then
+    # All configs are set
+    success "System already configured to automatically sign commits with SSH"
+  else
+    # Weird implementation of XOR
+    # https://stackoverflow.com/a/56700720/10053864
+    if [[ "${gpg_format:+is_set}" != "${user_signingkey:+is_set}" ]]; then
+      # Warn if it seems like commit signing is half enabled
+      # For users with weird git config that may have signing
+      # set up already but not in a way we can check
+      warning "Found incomplete commit signing configuration:"
+      echo "    [gpg]"
+      echo "      format = $gpg_format"
+      echo "    [user]"
+      echo "      signingkey = $user_signingkey"
+    fi
+    read -r -p "Enable automatic commit signing with SSH?
+(y/n)>" yn
+    case $yn in
+    [Yy]*) enable_ssh_commit_signing || failure "Could not enable automatic commit signing with SSH" ;; # don't fail here
+    *) echo "Skipping commit signing setup" ;;
+    esac
+  fi
+
+  ############################################################
+  # GitLab Container Registry Credentials
+  ############################################################
+
+  echo
+  echo "${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
+
+  # Use oras to log in to reg.git.act3-ace.com (oras checks login success)
+  echo -n "Installing oras to log into the registry... "
+  brew_install "oras"
+
+  # Use yq to add credsStore field to ~/.docker/config.json
+  if ! is_wsl; then
+    echo -n "Installing docker-credential-helper for secure credential storage... "
+    brew_install "docker-credential-helper"
+
+    CREDS_STORE="secretservice"
+    is_macos && CREDS_STORE="osxkeychain"
+
+    mkdir -p "$HOME/.docker" && touch -a "$HOME/.docker/config.json" # -a tells touch to only change the "access" and "change" times
+    log_eval "$HOMEBREW_PREFIX/bin/yq" e -i -o=json ".credsStore = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
+    log_eval "$HOMEBREW_PREFIX/bin/yq" e -i -o=json ".credHelpers.\"reg.git.act3-ace.com\" = \"$CREDS_STORE\"" "$HOME/.docker/config.json"
+    success "Configured registry authentication to use ${bold}${CREDS_STORE}${normal} (using config file ${bold}$HOME/.docker/config.json${normal})"
+  fi
+
+  if printf '%s\n' "$TOKEN" | log_eval "$HOMEBREW_PREFIX/bin/oras" login -u "$USERNAME" --password-stdin reg.git.act3-ace.com; then
+    success "Logged into the ACT3 GitLab Container Registry (reg.git.act3-ace.com)"
+  else
+    failure_red "Couldn't log into reg.git.act3-ace.com."
     echo
     abort
   fi
-else
-  # Copy the test file to the cache location
-  cp "$TEST" "$PRIVATE_SCRIPT"
-  chmod +x "$PRIVATE_SCRIPT"
-fi
 
-# shellcheck source=../../aceup/act3-login/act3-login-private
-source "$PRIVATE_SCRIPT"
-rm "$PRIVATE_SCRIPT"
+  ############################################################
+  # ACT3 Homebrew Tap
+  ############################################################
+
+  echo
+  echo "${bold}Setting up the ACT3 Homebrew Tap${normal}"
+
+  # Tap act3/ace-tools if not already tapped
+  if [[ $(log_out brew tap) =~ "act3/ace-tools" ]]; then
+    success "The ACT3 Homebrew Tap has already been added"
+  else
+    if output=$(log_out brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git); then
+      success "Added the ACT3 Homebrew Tap"
+    else
+      failure_red "Could not add the ACT3 Homebrew Tap"
+      echo
+      echo "Output of ${bold}brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git${normal}:"
+      echo "$output"
+      echo
+      abort
+    fi
+  fi
+
+  # Upgrade Homebrew Formulae again now that we are authenticated to the ACT3 Homebrew Tap
+  echo "Updating ACT3 Homebrew Tap:"
+
+  echo -n "   Running brew update... "
+  {
+    log_eval brew update
+    echo "$green_check"
+  } || {
+    echo "${red_x}"
+    echo "   ${yellow}WARNING: ${bold}brew update${normal}${yellow} failed.${normal} Check logs: $LOG_FILE"
+  }
+
+  # Give some info on the tap
+  echo
+  box_out "${bold}The ACT3 Homebrew Tap is the home for installing and updating ACT3 software${normal}" \
+    "  - Install ACE Tools: ${bold}brew install ace-tools${normal}" \
+    "  - List all ACT3 formulae: ${bold}brew search act3/ace-tools${normal}"
+
+  ############################################################
+  # ACT3 Project Tool GitLab API Credentials
+  ############################################################
+
+  echo
+  echo "${bold}Setting up authentication for the GitLab CLI (glab) and ACT3 Project Tool (act3-pt)${normal}"
+
+  brew_install "glab"
+
+  # Check for keyring support
+  if is_wsl; then
+    # Log in without --use-keyring, WSL does not support it
+    if printf '%s' "$TOKEN" |
+      log_eval "$HOMEBREW_PREFIX/bin/glab" auth login \
+        --hostname git.act3-ace.com \
+        --stdin; then
+      success "Logged glab and act3-pt into the ACT3 GitLab"
+    else
+      failure "Failed to log glab and act3-pt into the ACT3 GitLab"
+      check_logs
+    fi
+  else
+    if printf '%s' "$TOKEN" |
+      log_eval "$HOMEBREW_PREFIX/bin/glab" auth login \
+        --use-keyring \
+        --hostname git.act3-ace.com \
+        --stdin; then
+      success "Logged glab and act3-pt into the ACT3 GitLab"
+    else
+      failure "Failed to log glab and act3-pt into the ACT3 GitLab"
+      check_logs
+    fi
+  fi
+
+  ############################################################
+  # ACE Data Tool Telemetry Server Configuration
+  ############################################################
+  echo
+  echo "${bold}Setting up Telemetry Server for ACE Data Tool (ace-dt)${normal}"
+
+  # TODO: look into editing config with ace-dt command
+
+  ACE_DT_CONFIG="${ACE_DT_CONFIG:-$XDG_CONFIG_HOME/ace/dt/config.yaml}"
+
+  mkdir -p "$(dirname "$ACE_DT_CONFIG")" && touch -a "$ACE_DT_CONFIG"
+
+  if [ -s "$ACE_DT_CONFIG" ]; then
+    success "Leaving existing ace-dt configuration file unchanged"
+  else
+    cat <<EOF >"$ACE_DT_CONFIG"
+# ACE Data Tool Configuration
+apiVersion: config.dt.act3-ace.io/v1alpha1
+kind: Configuration
+
+# CachePruneMax is the maximum cache size after pruning
+# cachePruneMax: 500Mi
+
+# CachePath is the directory where the cache fields are stored
+# cachePath:
+
+# CompressionLevel is the level used for compression.  Valid values are min, normal, max
+# compressionLevel: normal
+
+# ChunkSize is the maximum size of a chunk used to upload blobs. 0 disables chunking
+# chunkSize: 100Mi
+
+# ConcurrentHTTP is the maximum number of HTTP requests that will be in flight at any given time. Must be positive.
+# concurrentHTTP: 25
+
+# RegistryAuthFile is the file to use for credentials to an OCI registry.  Defaults to ~/.docker/config.json
+# registryAuthFile: ~/.docker/config.json
+
+# Telemetry configuration
+telemetry:
+- name: lion
+  url: https://telemetry.lion.act3-ace.ai
+telemetryUserName: $USERNAME
+EOF
+    success "Created ace-dt configuration file with telemetry server configuration"
+    success "Configured Telemetry server integration"
+  fi
+
+  ############################################################
+  # DoD Certificate Installation (optional)
+  ############################################################
+
+  echo
+  echo "${bold}Install the latest DoD CA Certificates${normal}"
+
+  install_dod_certs() {
+    echo "Running the dod-certs script"
+    /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/dod-certs/dod-certs)"
+  }
+
+  read -r -p "Do you wish to proceed?
+(y/n)>" yn
+  case $yn in
+  [Yy]*) install_dod_certs || failure "Could not install DoD Certificates" ;; # don't fail here
+  *) echo "Skipping DoD Certificate installation" ;;
+  esac
+
+  ############################################################
+  # Cluster Access Configuration (optional)
+  ############################################################
+
+  echo
+  echo "${bold}Set up ACT3 Kubernetes cluster access${normal}"
+
+  setup_cluster_access() {
+    echo -n "Installing Kubectl for cluster access... "
+    brew_install "kubectl"
+
+    echo -n "Installing the Kubectl OIDC plugin for cluster authentication... "
+    # Tap: https://github.com/int128/homebrew-kubelogin
+    brew_install "int128/kubelogin/kubelogin"
+
+    if is_wsl; then
+      echo -n "Installing wsl-open, an xdg-open alternative for WSL... "
+      # Repo: https://gitlab.com/4U6U57/wsl-open
+      curl -fsSL -o "$HOMEBREW_PREFIX/bin/wsl-open" https://raw.githubusercontent.com/4U6U57/wsl-open/master/wsl-open.sh
+      "$HOMEBREW_PREFIX/bin/wsl-open" -w
+    fi
+
+    CLUSTERCONFIG="$HOME/.kube/act3.yaml"
+
+    # Make sure file exists
+    {
+      mkdir -p "$HOME/.kube"
+      chmod 700 "$HOME/.kube" # permissions for only user read/write
+      touch -a "$CLUSTERCONFIG"
+      chmod 700 "$CLUSTERCONFIG" # permissions for only user read/write
+      [ -f "$HOME/.kube/config" ] && chmod 700 "$HOME/.kube/config"
+    } || failure "Could not check for the ${bold}~/.kube${normal} directory"
+
+    # Write to it
+    {
+      cat <<EOF >"$CLUSTERCONFIG"
+# Cluster config sourced from https://git.act3-ace.com/www/www.git.act3-ace.com/-/blob/master/docs/resources/kubernetes.md
+kind: Config
+apiVersion: v1
+clusters:
+- cluster:
+    server: https://k8s.ace.act3.ai
+  name: lion-public
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJlakNDQVIrZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWtNU0l3SUFZRFZRUUREQmx5YTJVeUxYTmwKY25abGNpMWpZVUF4TmpReU56YzJOamMwTUI0WERUSXlNREV5TVRFME5URXhORm9YRFRNeU1ERXhPVEUwTlRFeApORm93SkRFaU1DQUdBMVVFQXd3WmNtdGxNaTF6WlhKMlpYSXRZMkZBTVRZME1qYzNOalkzTkRCWk1CTUdCeXFHClNNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJMRDRDdkRFVHYwL3VVdUJjUlV1MDcvN3RGMTBVTU9TOWlWa1FrekIKSGg1ai9jak4vUThNM2pycTRYVWttR2VhVG9QalhrZjQ0MjNVRzV3cGM5V3NjdFdqUWpCQU1BNEdBMVVkRHdFQgovd1FFQXdJQ3BEQVBCZ05WSFJNQkFmOEVCVEFEQVFIL01CMEdBMVVkRGdRV0JCUWxKNy8wY2k2VzBKODJLd2NwCjhqMW96Vk5WampBS0JnZ3Foa2pPUFFRREFnTkpBREJHQWlFQTdXTy9NRXlMYnJ6Z2ZacDRRdkx5RzltSjNrMGkKeDFxRFlWSUNWQnYrbG1vQ0lRRExMN3R4UFA1SDB0bndvVW1JTy8xOEtjVUI3MzZOanh3eDB4WnNPeEYzMWc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    server: https://lion-ctl.act3-ace.ai:6443
+  name: lion
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJlRENDQVIrZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWtNU0l3SUFZRFZRUUREQmx5YTJVeUxYTmwKY25abGNpMWpZVUF4TmpjeU56YzROVGcyTUI0WERUSXpNREV3TXpJd05ETXdObG9YRFRNeU1USXpNVEl3TkRNdwpObG93SkRFaU1DQUdBMVVFQXd3WmNtdGxNaTF6WlhKMlpYSXRZMkZBTVRZM01qYzNPRFU0TmpCWk1CTUdCeXFHClNNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJHeUVGN05XVnZUUGt1eHFDREEydlRhZWg4c3crRTZ3V2tCUTFzSysKZzhDSDluVFpIRnUzTm56a3NjOHV5QkhRTnhtZ2JZMGhLY3EyZFJrTjJHbUxBeEtqUWpCQU1BNEdBMVVkRHdFQgovd1FFQXdJQ3BEQVBCZ05WSFJNQkFmOEVCVEFEQVFIL01CMEdBMVVkRGdRV0JCUVZIZmViaHhGZmNFUlhWY2dDCmJ0S2ZkSnl1b1RBS0JnZ3Foa2pPUFFRREFnTkhBREJFQWlCQ0FMb3YyRUptZENJdjZHajNKc2Q1aWtYZmNHMXkKWGo0aFlTeGpPVzFSZWdJZ2ZDczVFZU00a1JIcXpYWkxsMG95Z250SitrelhzOGFEaFdSa09GakE0VmM9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    server: https://meerkat-ctl.act3-ace.ai:6443
+  name: meerkat
+users:
+- name: gitlab-oidc
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - oidc-login
+      - get-token
+      - --oidc-issuer-url=https://git.act3-ace.com
+      - --oidc-client-id=f784af5244e3f5875d932f99a82b0c4147b17fa656e58e0e1acaea3621db2c33
+      command: kubectl
+      env: null
+      provideClusterInfo: false
+contexts:
+- context:
+    cluster: lion-public
+    user: gitlab-oidc
+  name: lion
+- context:
+    cluster: meerkat
+    user: gitlab-oidc
+  name: meerkat
+current-context: lion
+EOF
+      success "Created cluster configuration file ${bold}${CLUSTERCONFIG}${normal}"
+    } || failure "Could not create cluster configuration file ${bold}${CLUSTERCONFIG}${normal}"
+
+    if [ -f "$HOME/.kube/config" ]; then
+      backup="$HOME/.kube/config.bak-$(date +%s)"
+      {
+        cp "$HOME/.kube/config" "$backup"
+        success "Backed up existing configuration to ${bold}$backup${normal}"
+      } || {
+        failure "Could not back up existing configuration, aborting"
+        return 1
+      }
+    fi
+
+    {
+      KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$HOMEBREW_PREFIX/bin/kubectl" config view --raw >~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
+      success "Merged cluster configuration into ${bold}$HOME/.kube/config${normal}"
+    } || {
+      failure "Could not merge configuration, aborting"
+      return 1
+    }
+  }
+  echo "Existing cluster configuration will be backed up before creating a new config file."
+  read -r -p "Do you wish to proceed?
+(y/n)>" yn
+  case $yn in
+  [Yy]*) setup_cluster_access || failure "Could not set up cluster access" ;; # don't fail here
+  *) echo "Skipping cluster access setup" ;;
+  esac
+
+  ############################################################
+  # ACE Hub User Configuration File
+  ############################################################
+
+  echo
+  echo "${bold}Updating ACE Hub authentication${normal}"
+
+  context="lion"
+  user_namespace="${USERNAME}-workspace"
+
+  function create_acehub_userconfigurationfile() {
+    warning "Could not update ACE Hub authentication secrets, creating user configuration file as a fallback."
+
+    ACE_HUB_USER_FILE="$HOME/Downloads/ace-hub-userconfiguration.json"
+
+    [ -f "$ACE_HUB_USER_FILE" ] && rm "$ACE_HUB_USER_FILE"
+    mkdir -p "$HOME/Downloads/" && touch "$ACE_HUB_USER_FILE"
+
+    cat <<EOF >"$ACE_HUB_USER_FILE"
+{
+	"env": {},
+	"envFiles": {
+		"NETRC": "machine git.act3-ace.com\n  login $USERNAME\n  password $TOKEN",
+		"REGISTRY_AUTH_FILE": "{\"auths\": {\"reg.git.act3-ace.com\": {\"auth\": \"$(echo -n "$USERNAME:$TOKEN" | base64)\"}}}",
+		"ACE_DT_TELEMETRY_USERNAME": "$USERNAME"
+	},
+	"ips": {
+		"act3": {
+			"registry": "reg.git.act3-ace.com",
+			"username": "$USERNAME",
+			"password": "$TOKEN"
+		}
+	},
+	"userLaunchTemplates": {}
+}
+EOF
+    success "Created ACE Hub user configuration file ${bold}${ACE_HUB_USER_FILE}${normal}"
+    warning_yellow "This file must be imported to ACE Hub to use your credentials."
+    finish_tasks+=("- Import User Configuration File to ACE Hub")
+    finish_tasks+=("  1. Go to ${bold}https://hub.ace.act3.ai/userconfig${normal}")
+    finish_tasks+=("  2. Click ${bold}Import Config${normal}")
+    finish_tasks+=("  3. Select ${bold}${ACE_HUB_USER_FILE}${normal}")
+    finish_tasks+=("  4. Check the box for ${bold}Overwrite${normal}")
+    finish_tasks+=("  5. Click ${bold}Import${normal}")
+    finish_tasks+=("  6. Delete the file ${bold}${ACE_HUB_USER_FILE}${normal} from your system")
+  }
+
+  function kubectl_apply() {
+    echo "$1" | log_out "$HOMEBREW_PREFIX/bin/kubectl" apply \
+      --context="$context" --namespace="$user_namespace" -f -
+  }
+
+  function namespace_exists() {
+    log_eval "$HOMEBREW_PREFIX/bin/kubectl" get namespaces --context="$1" --field-selector="metadata.name=$2"
+  }
+
+  function create_acehub_secrets() {
+    context="lion"
+    user_namespace="${USERNAME}-workspace"
+
+    # If user is not logged into ACT3 GitLab in browser, OIDC login will open a browser window
+    box_out "If a browser window opens to the GitLab login page, log in with your ACT3 account"
+
+    # Check if user namespace exists
+    if namespace_exists "$context" "$user_namespace"; then
+      success "User namespace ${user_namespace} exists in cluster ${context}"
+    else
+      failure "User namespace ${user_namespace} does not exist in cluster ${context}"
+
+      create_issue_link="https://git.act3-ace.com/devsecops/ace-project/-/issues/new?issuable_template=Add%20User"
+      echo
+      echo "Create an issue requesting cluster access:"
+      echo "${bold}${create_issue_link}${normal}"
+      echo
+      warning_yellow "Skipping secret creation"
+      finish_tasks+=("- Create an issue requesting cluster access:")
+      finish_tasks+=("  ${bold}${create_issue_link}${normal})")
+      return 1
+    fi
+
+    echo "Refreshing ACE Hub image pull secret..."
+
+    # Delete existing secret
+    if ! log_eval "$HOMEBREW_PREFIX/bin/kubectl" delete secret act3 --ignore-not-found \
+      --context "$context" -n "$user_namespace"; then
+      failure "Could not delete secret/act3"
+      return 1
+    fi
+
+    # Create new secret
+    if log_eval "$HOMEBREW_PREFIX/bin/kubectl" create secret docker-registry act3 \
+      --docker-server reg.git.act3-ace.com \
+      --docker-username "$USERNAME" \
+      --docker-password "$TOKEN" \
+      --context "$context" -n "$user_namespace"; then
+      success "Created secret/act3"
+    else
+      failure "Could not create secret/act3"
+      return 1
+    fi
+
+    # Label new secret
+    if log_eval "$HOMEBREW_PREFIX/bin/kubectl" label secret act3 hub.act3-ace.io/secret-type=ips \
+      --context "$context" -n "$user_namespace"; then
+      success "Added label hub.act3-ace.io/secret-type=ips"
+    else
+      failure "Could not add label hub.act3-ace.io/secret-type=ips"
+      return 1
+    fi
+
+    # Add managed-by label
+    if log_eval "$HOMEBREW_PREFIX/bin/kubectl" label secret act3 app.kubernetes.io/managed-by=act3-login \
+      --context "$context" -n "$user_namespace"; then
+      success "Added label app.kubernetes.io/managed-by=act3-login"
+    else
+      failure "Could not add label app.kubernetes.io/managed-by=act3-login"
+      return 1
+    fi
+
+    echo "Refreshing ACE Hub env file secret..."
+
+    # Delete existing secret
+    if ! log_eval "$HOMEBREW_PREFIX/bin/kubectl" delete secret hub-envfile --ignore-not-found \
+      --context "$context" -n "$user_namespace"; then
+      failure "Could not delete secret/hub-envfile"
+      return 1
+    fi
+
+    # Create new secret
+    if log_eval "$HOMEBREW_PREFIX/bin/kubectl" create secret generic hub-envfile \
+      --from-literal=NETRC="machine git.act3-ace.com\n  login $USERNAME\n  password $TOKEN" \
+      --from-literal=REGISTRY_AUTH_FILE="{\"auths\": {\"reg.git.act3-ace.com\": {\"auth\": \"$(echo -n "$USERNAME:$TOKEN" | base64)\"}}}" \
+      --from-literal=ACE_DT_TELEMETRY_USERNAME="$USERNAME" \
+      --context "$context" -n "$user_namespace"; then
+      success "Created secret/hub-envfile"
+    else
+      failure "Could not create secret/hub-envfile"
+      return 1
+    fi
+
+    # Label new secret
+    if log_eval "$HOMEBREW_PREFIX/bin/kubectl" label secret hub-envfile hub.act3-ace.io/secret-type=envfile \
+      --context "$context" -n "$user_namespace"; then
+      success "Added label hub.act3-ace.io/secret-type=envfile"
+    else
+      failure "Could not add label hub.act3-ace.io/secret-type=envfile"
+      return 1
+    fi
+
+    # Add managed-by label
+    if log_eval "$HOMEBREW_PREFIX/bin/kubectl" label secret hub-envfile app.kubernetes.io/managed-by=act3-login \
+      --context "$context" -n "$user_namespace"; then
+      success "Added label app.kubernetes.io/managed-by=act3-login"
+    else
+      failure "Could not add label app.kubernetes.io/managed-by=act3-login"
+      return 1
+    fi
+  }
+
+  # Create the secrets directly, fall back on creating a user configuration file
+  create_acehub_secrets || create_acehub_userconfigurationfile
+
+  ############################################################
+  # Exit tasks
+  ############################################################
+
+  echo
+  echo "${bold}${green}Success!${normal}"
+
+  if ! [ ${#finish_tasks[@]} -eq 0 ]; then
+    # Add header
+    echo
+    box_out "${yellow}${bold}Complete the following tasks to finish authentication${normal}" "${finish_tasks[@]}"
+  fi
+}
+
+# Call the function
+authenticate "$USERNAME" "$TOKEN"
