@@ -18,9 +18,7 @@ After the **DoD Certificates script** has run and the certificates have been tru
 
 ## Usage
 
-It is recommended to use the ACT Login script to install the DoD certs.
-
-### Recommended Usage
+It is recommended to use the [ACT3 Login script](../act3-login/README.md) to install the DoD certs. If you would like to run the `dod-certs` script by itself, follow the [standalone usage instructions](#standalone-usage) below.
 
 Run the [ACT3 Login script](https://github.com/act3-ace/aceup#aceup) and confirm **Yes** to the install dod-certs prompt.
 
@@ -33,67 +31,39 @@ Run the [ACT3 Login script](https://github.com/act3-ace/aceup#aceup) and confirm
 ```
 <!-- act3-pt end -->
 
-### Optional Usage
-
-#### ACT3 Homebrew Tap
-
-Add the [ACT3's Homebrew tap](../../homebrew-ace-tools/README.md) to brew the ACEup formula and run `dod-certs`.
-
-Add the ACT3 Tap:
-
-<!-- act3-pt https://git.act3-ace.com/ace/homebrew-ace-tools.git file:README.md lines:14-20 -->
-<!-- ref:bff1c411f9b7bbdec15466b411a39edde5a93771 -->
-```sh
-# SSH Authentication
-brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git
-
-# HTTPS Authentication
-brew tap act3/ace-tools https://git.act3-ace.com/ace/homebrew-ace-tools.git
-```
-<!-- act3-pt end -->
-
-Next, install ACEup:
+## Standalone Usage
 
 ```sh
-brew install aceup
+/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/dod-certs/dod-certs)"
 ```
 
-Then, run:
+### Clone Repo and Run
 
-```sh
-dod-certs
-```
-
-#### Clone Repo and Run
-
-Clone the [ACEup](https://git.act3-ace.com/ace/aceup) repository to your machine using SSH or HTTPS:
+Clone the [ACEup](https://github.com/act3-ace/aceup) repository to your system:
 
 ```sh
 # SSH Authentication
-git clone git@git.act3-ace.com:ace/aceup.git
+git clone ssh://git@github.com/act3-ace/aceup.git
 
 # HTTPS Authentication
-git clone https://git.act3-ace.com/ace/aceup.git
+git clone https://github.com/act3-ace/aceup.git
 ```
 
-Then, run:
+Then, run the [`dod-certs` script](./dod-certs):
 
 ```sh
-cd aceup
-
-./dod-certs/dod-certs
+./aceup/dod-certs/dod-certs
 ```
 
 ## Additional Resources
 
 ### Documentation
 
-- [FAQ](../docs/faq.md)
+- [FAQ](../docs/troubleshooting-faq.md)
 - [Firefox Browser Supplement](../docs/apt-firefox-supplement.md)
 
 ### Support
 
 - [Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops): Create a post in the DevOps channel for assistance
-- Create a GitLab issue in the ACEup repository:
+- Create a GitHub issue in the ACEup repository:
   - [Via browser](https://git.act3-ace.com/ace/aceup/-/issues/new)
-<!-- TODO replace when operational - [By email](mailto:incoming+ace-aceup-1173-cpdx5kax2g659873veqpf97dt-issue@mail.act3-ace.com) -->
