@@ -51,18 +51,6 @@ done
 # Have command error out on any command failure
 set -e
 
-# System Checks: Set XDG dirs for OS type
-if is_linux; then
-  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-elif is_macos; then
-  XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
-  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/Library/Application Support}"
-else
-  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-fi
-
 # Initialize finishing tasks
 finish_tasks=()
 
@@ -345,6 +333,19 @@ echo "$blue"'
 
 echo "${bold}Welcome to the ACT3 Login tool. Let's authenticate you to ACT3's ACE services!${normal}"
 echo
+
+# System Checks: Set XDG dirs for OS type
+if is_linux; then
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+elif is_macos; then
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-"$HOME/Library/Caches"}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/Library/Application Support}"
+else
+  XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+fi
+
 CACHE="$XDG_CACHE_HOME/aceup/act3-login"
 LOG_FILE="$CACHE/logs.txt"
 create_log_file
