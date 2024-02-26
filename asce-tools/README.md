@@ -37,21 +37,22 @@ git clone https://github.com/act3-ace/aceup.git
 Then, install ASCE Tools by running `brew bundle` on the [ASCE Tools Brewfile](./Brewfile):
 
 ```sh
-# Install all ASCE Tools: Homebrew Formulae and VS Code Extensions
-brew bundle --file ./aceup/asce-tools/dod-certs
+# Install ASCE Tools Homebrew Formulae
+brew bundle -v --file ./aceup/asce-tools/Brewfile
 
-# Install Homebrew Formulae only
-brew bundle --file ./aceup/asce-tools/dod-certs --formula
-
-# Install VS Code Extensions only
-brew bundle --file ./aceup/asce-tools/dod-certs --formula
+# Install ASCE Tools VS Code Extensions
+brew bundle -v --file ./aceup/asce-tools/Brewfile-vscode --formula
 ```
 
+> The -v/--verbose flag is used to output formula caveats, which can contain important post-installation instructions.
+>
 > For all available options, see Homebrew's documentation: [Bundle Command](https://docs.brew.sh/Manpage#bundle-subcommand)
 
 ## Packages
 
-The following ACT3 packages are included in ASCE Tools:
+### Homebrew Formulae
+
+The following ACT3 Homebrew Formulae are included in ASCE Tools:
 
 - [ASCE Data Tool](https://git.act3-ace.com/ace/data/tool)
 - [ACT3 Project Tool](https://git.act3-ace.com/devsecops/act3-pt)
@@ -59,7 +60,7 @@ The following ACT3 packages are included in ASCE Tools:
 - [ASCE CLI](https://git.act3-ace.com/ace/cli)
 - [ASCE Equilibria Kubectl Plugin](https://git.act3-ace.com/ace/kubectl-plugins)
 
-The following third-party packages are included in ASCE Tools:
+The following third-party Homebrew Formulae are included in ASCE Tools:
 
 - [Container Structure Tests](https://formulae.brew.sh/formula/container-structure-test#default)
 - [crane](https://formulae.brew.sh/formula/crane#default)
@@ -78,6 +79,12 @@ The following third-party packages are included in ASCE Tools:
 - [Skaffold](https://formulae.brew.sh/formula/skaffold#default)
 - [websocat](https://formulae.brew.sh/formula/websocat#default)
 - [yq](https://formulae.brew.sh/formula/yq#default)
+
+### Kubectl Plugins
+
+The following kubectl plugins are included in ASCE Tools:
+
+- []
 
 ### VS Code Extensions
 
