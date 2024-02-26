@@ -81,6 +81,4 @@ Then, run the desired script:
 - **[Create a Support Ticket issue](https://github.com/act3-ace/aceup/issues/new)**: create a support ticket issue on the ACEup GitHub project.
 - **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops)**: create a post in the DevOps channel for assistance.
 
-## Public Release
-
-Approved for public release: distribution unlimited. Case Numbers: AFRL-2024-1007
+> Approved for public release: distribution unlimited. Case Numbers: AFRL-2024-1007
