@@ -63,23 +63,27 @@ odie() {
 # https://github.com/databus23/helm-diff#using-helm-plugin-manager--23x
 # https://github.com/hypnoglow/helm-s3#install
 helm_plugins=(
-	'jkroepke/helm-secrets'
-	'chartmuseum/helm-push'
-	'aslafy-z/helm-git'
-	'databus23/helm-diff'
-	'hypnoglow/helm-s3'
+	'secrets=https://github.com/jkroepke/helm-secrets'
+	'cm-push=https://github.com/chartmuseum/helm-push'
+	's3=https://github.com/aslafy-z/helm-git'
+	'diff=https://github.com/databus23/helm-diff'
+	's3=https://github.com/hypnoglow/helm-s3'
 )
 
 ohai "Installing helm plugins:"
 echo "${helm_plugins[@]}"
 
-for name in "${helm_plugins[@]}"; do
-	ohai "$ helm plugin install https://github.com/$name"	
-	if output=$(helm plugin install "https://github.com/$name" 2>&1); then
+for entry in "${helm_plugins[@]}"; do
+	plugin=${entry%%"="*}
+	repo=${entry#*"="}
+	ohai "$ helm plugin install $repo"
+	if output=$(helm plugin install "$repo" 2>&1); then
 		[[ -n "$output" ]] && echo "$output" # still print output in case there was a warning
-		echo "Installed $name"
+		echo "Installed $plugin"
 	elif [[ "$output" == "Error: plugin already exists" ]]; then
-		echo "Already installed: $name"
+		echo "Already installed: $plugin"
+		ohai "$ helm plugin update $plugin"
+		helm plugin update "$plugin"
 	else
 		onoe "$output"
 	fi
