@@ -6,7 +6,7 @@ The ACEup repository is a collection of script-based tools and resources to boot
 
 - [ACT3 Login script](./act3-login/README.md)
 - [DoD Certs script](./dod-certs/README.md)
-- [ASCE Tools installers](./smart-card-reader/README.md)
+- [ASCE Tools installers](./asce-tools/README.md)
 - [Smart Card Reader script](./smart-card-reader/README.md)
 
 This repository is intended for users who need to authenticate and configure their macOS, Ubuntu 22.04, or WSL2 (running Ubuntu 22.04) machines for work in the ACT3 environment.
