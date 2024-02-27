@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ACT3 Mattermost DevOps channel
+    url: https://chat.git.act3-ace.com/act3/channels/devops
+    about: Create a post in the DevOps channel for assistance
