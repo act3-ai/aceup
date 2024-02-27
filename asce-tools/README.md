@@ -44,6 +44,16 @@ brew bundle -v --file ./aceup/asce-tools/Brewfile
 brew bundle -v --file ./aceup/asce-tools/Brewfile-vscode --formula
 ```
 
+To install Kubectl and Helm plugins, run the `kubectl-plugins` and `helm-plugins` scripts:
+
+```sh
+# Install Kubectl plugins
+./aceup/asce-tools/kubectl-plugins
+
+# Install Helm plugins
+./aceup/asce-tools/helm-plugins
+```
+
 > The -v/--verbose flag is used to output formula caveats, which can contain important post-installation instructions.
 >
 > For all available options, see Homebrew's documentation: [Bundle Command](https://docs.brew.sh/Manpage#bundle-subcommand)
