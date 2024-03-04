@@ -1103,7 +1103,7 @@ EOF
     success "Created ACE Hub user configuration file ${bold}${ACE_HUB_USER_FILE}${normal}"
     warning_yellow "This file must be imported to ACE Hub to use your credentials."
     finish_tasks+=("- Import User Configuration File to ACE Hub")
-    finish_tasks+=("  1. Go to ${bold}https://hub.ace.act3.ai/userconfig${normal}")
+    finish_tasks+=("  1. Go to ${bold}https://hub.ace.act3.ai/settings${normal}")
     finish_tasks+=("  2. Click ${bold}Import Config${normal}")
     finish_tasks+=("  3. Select ${bold}${ACE_HUB_USER_FILE}${normal}")
     finish_tasks+=("  4. Check the box for ${bold}Overwrite${normal}")
