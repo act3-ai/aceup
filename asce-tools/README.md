@@ -11,7 +11,7 @@ It is recommended to use the ACT3 Homebrew Tap's `install-asce-tools` command to
 To add the ACT3 Homebrew Tap, run:
 
 ```sh
-brew tap act3-ace/tap
+brew tap act3-ai/tap
 ```
 
 Then, run the `install-asce-tools` command:
