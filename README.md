@@ -31,7 +31,9 @@ Run the [ACT3 Login script](./act3-login/README.md):
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
 
-> Check [prerequisites](./act3-login/README.md#prerequisites) before running.
+> [!IMPORTANT]
+>
+> Check the [prerequisites](./act3-login/README.md#prerequisites) before running.
 
 #### New User Setup
 
@@ -78,9 +80,9 @@ Then, run the desired script:
 
 ## Support
 
-- **[Troubleshooting FAQ](docs/troubleshooting-faq.md)**: consult list of frequently asked questions and their answers.
-- **[Create a Support Ticket issue](https://github.com/act3-ace/aceup/issues/new)**: create a support ticket issue on the ACEup GitHub project.
-- **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops)**: create a post in the DevOps channel for assistance.
+- **[Troubleshooting FAQ](docs/troubleshooting-faq.md)**: consult list of frequently asked questions and their answers
+- **[Create a Support Ticket issue](https://github.com/act3-ace/aceup/issues/new)**: create a support ticket issue on the ACEup GitHub project
+- **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops)**: create a post in the DevOps channel for assistance
 
 ---
 

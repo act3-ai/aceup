@@ -11,7 +11,7 @@ Running the script will complete the following:
 - Download the latest DoD certs from [DoD Cyber Exchange](https://public.cyber.mil/pki-pke/)
 - Verify the downloaded certs' integrity with a checksum
 - Installs DoD certs
-  - Ubuntu/WSL2: added to '/etc/ssl/certs/ca-certificates.crt'
+  - Ubuntu/WSL2: added to `/etc/ssl/certs/ca-certificates.crt`
   - macOS: added to system keychain
 
 After the **DoD Certificates script** has run and the certificates have been trusted, users should be able to access DoD Public Key Infrastructure (PKI)-protected information or applications for web sites that require a CAC for authentication.
@@ -20,9 +20,7 @@ After the **DoD Certificates script** has run and the certificates have been tru
 
 It is recommended to use the [ACT3 Login script](../act3-login/README.md) to install the DoD certs. If you would like to run the `dod-certs` script by itself, follow the [standalone usage instructions](#standalone-usage) below.
 
-Run the [ACT3 Login script](../act3-login/README.md) and confirm **Yes** when asked to install the DoD certs.
-
-> Note: ensure that the [prerequisites for the ACT3 Login script](../act3-login/README.md#prerequisites) are met.
+Run the [ACT3 Login script](../act3-login/README.md) and confirm **Yes** when asked to install the DoD certs:
 
 <!-- act3-pt ../act3-login/README.md lines:42-45 -->
 <!-- ref:b93a637fe804ccc80ec62cedfec1184d00a07930 -->
@@ -30,6 +28,10 @@ Run the [ACT3 Login script](../act3-login/README.md) and confirm **Yes** when as
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
 <!-- act3-pt end -->
+
+> [!IMPORTANT]
+>
+> Check the [prerequisites for the ACT3 Login script](../act3-login/README.md#prerequisites).
 
 ## Standalone Usage
 
@@ -44,28 +46,23 @@ Run the [`dod-certs` script](./dod-certs) in standalone form:
 Clone the [ACEup](https://github.com/act3-ace/aceup) repository to your system:
 
 ```sh
-# SSH Authentication
-git clone ssh://git@github.com/act3-ace/aceup.git
-
-# HTTPS Authentication
 git clone https://github.com/act3-ace/aceup.git
 ```
 
-Then, run the [`dod-certs` script](./dod-certs):
+Then, run the [`dod-certs` script](./dod-certs) in standalone form:
 
 ```sh
 ./aceup/dod-certs/dod-certs
 ```
 
-## Additional Resources
+## Firefox Browser
 
-### Documentation
+Additional steps are required to use the DoD certificates with the Firefox browser:
 
-- [FAQ](../docs/troubleshooting-faq.md)
-- [Firefox Browser Supplement](../docs/apt-firefox-supplement.md)
+- **[Firefox Browser Supplement](../docs/apt-firefox-supplement.md)**: additional setup steps for the Firefox browser
 
-### Support
+## Support
 
-- [Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops): Create a post in the DevOps channel for assistance
-- Create a GitHub issue in the ACEup repository:
-  - [Via browser](https://git.act3-ace.com/ace/aceup/-/issues/new)
+- **[Troubleshooting FAQ](../docs/troubleshooting-faq.md)**: consult list of frequently asked questions and their answers.
+- **[Create a support ticket](https://github.com/act3-ace/aceup/issues/new)**: create a support ticket issue on the ACEup GitHub project.
+- **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops)**: create a post in the DevOps channel for assistance.

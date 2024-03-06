@@ -73,14 +73,8 @@ Slot 0 (0x0): Broadcom Corp 5880 [Contacted SmartCard] (0123456789ABCD) 00 00
   pin min/max        : 4/8
 ```
 
-## Additional Resources
+## Support
 
-### Documentation
-
-- [FAQ](./faq.md)
-
-### Support
-
-- [Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops): Create a post in the DevOps channel for assistance
-- Create an issue in the ACEup repository:
-  - [Via browser](https://github.com/act3-ace/aceup/issues/new)
+- **[Troubleshooting FAQ](faq.md)**: consult list of frequently asked questions and their answers.
+- **[Create a support ticket](https://github.com/act3-ace/aceup/issues/new)**: create a support ticket issue on the ACEup GitHub project.
+- **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops)**: create a post in the DevOps channel for assistance.

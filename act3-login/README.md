@@ -9,7 +9,7 @@ ACT3 Login is designed to:
 ACT3 Login does the following:
 
 - Enables secure credential storage using your system's keychain
-- Adds the ACT3 Homebrew Tap for access to internal tools
+- Adds the [ACT3 Homebrew Tap](https://github.com/act3-ai/homebrew-tap) for easy access to ACT3 software
 - Authentication for the following:
   - Git over SSH and HTTPS
     - Optional: Enable commit signing with SSH
@@ -43,7 +43,9 @@ ACT3 Login does the following:
 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/act3-ace/aceup/main/act3-login/act3-login)"
 ```
 
-> Check [prerequisites](#prerequisites) before running.
+> [!IMPORTANT]
+>
+> Check the [prerequisites](./act3-login/README.md#prerequisites) before running.
 
 ### New User Setup
 

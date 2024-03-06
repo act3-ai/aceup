@@ -4,6 +4,10 @@ ASCE Tools is a collection of common software packages for ASCE users and ACT3 d
 
 Software installed by the ASCE Tools command will be kept up-to-date with `brew upgrade`.
 
+> [!IMPORTANT]
+>
+> The [ACT3 Homebrew Tap's prerequisites](https://github.com/act3-ai/homebrew-tap#prerequisites) are required in order to install ACT3 packages included in ASCE Tools.
+
 ## Usage
 
 It is recommended to use the ACT3 Homebrew Tap's `install-asce-tools` command to install ASCE Tools. If you would like to install ASCE Tools without using the ACT3 Homebrew Tap, follow the [standalone usage instructions](#standalone-usage) below.
@@ -27,10 +31,6 @@ ASCE Tools can be installed without the use of the ACT3 Homebrew Tap using Homeb
 Clone the [ACEup](https://github.com/act3-ace/aceup) repository to your system:
 
 ```sh
-# SSH Authentication
-git clone ssh://git@github.com/act3-ace/aceup.git
-
-# HTTPS Authentication
 git clone https://github.com/act3-ace/aceup.git
 ```
 
@@ -44,6 +44,10 @@ brew bundle -v --file ./aceup/asce-tools/Brewfile
 brew bundle -v --file ./aceup/asce-tools/Brewfile-vscode --formula
 ```
 
+> [!TIP]
+>
+> The `-v`/`--verbose` flag is used to output formula caveats, which can contain important post-installation instructions
+
 To install Kubectl and Helm plugins, run the `kubectl-plugins` and `helm-plugins` scripts:
 
 ```sh
@@ -54,47 +58,49 @@ To install Kubectl and Helm plugins, run the `kubectl-plugins` and `helm-plugins
 ./aceup/asce-tools/helm-plugins
 ```
 
-> The -v/--verbose flag is used to output formula caveats, which can contain important post-installation instructions.
->
-> For all available options, see Homebrew's documentation: [Bundle Command](https://docs.brew.sh/Manpage#bundle-subcommand)
-
 ## Packages
 
 ### Homebrew Formulae
 
 The following ACT3 Homebrew Formulae are included in ASCE Tools:
 
-- [ASCE Data Tool](https://git.act3-ace.com/ace/data/tool)
-- [ACT3 Project Tool](https://git.act3-ace.com/devsecops/act3-pt)
-- [ASCE Hub CLI](https://git.act3-ace.com/ace/hub/cli)
-- [ASCE CLI](https://git.act3-ace.com/ace/cli)
-- [ASCE Equilibria Kubectl Plugin](https://git.act3-ace.com/ace/kubectl-plugins)
+- [`ace-dt`](https://git.act3-ace.com/ace/data/tool): ASCE Data Tool
+- [`asce-hub-cli`](https://git.act3-ace.com/ace/hub/cli): ASCE Hub CLI
+- [`asce`](https://git.act3-ace.com/ace/cli): ASCE CLI
+- [`act3-pt`](https://devsecops.git.act3-ace.com/act3-pt): ACT3 Project Tool
+- [`kubectl-equilibria`](https://git.act3-ace.com/ace/equilibria#kubectl-plugin): ASCE Equilibria `kubectl` plugin
 
 The following third-party Homebrew Formulae are included in ASCE Tools:
 
-- [Container Structure Tests](https://formulae.brew.sh/formula/container-structure-test#default)
-- [crane](https://formulae.brew.sh/formula/crane#default)
-- [direnv](https://formulae.brew.sh/formula/direnv#default)
-- [Git LFS](https://formulae.brew.sh/formula/git-lfs#default)
-- [glab](https://formulae.brew.sh/formula/glab#default)
-- [Helm](https://formulae.brew.sh/formula/helm#default)
-- [Helmfile](https://formulae.brew.sh/formula/helmfile#default)
-- [K9s](https://formulae.brew.sh/formula/k9s#default)
-- [kind](https://formulae.brew.sh/formula/kind#default)
-- [Krew](https://formulae.brew.sh/formula/krew#default)
-- [kubectl](https://formulae.brew.sh/formula/kubernetes-cli#default)
-- [Kustomize](https://formulae.brew.sh/formula/kustomize#default)
-- [oras](https://formulae.brew.sh/formula/oras#default)
-- [Podman](https://formulae.brew.sh/formula/podman#default)
-- [Skaffold](https://formulae.brew.sh/formula/skaffold#default)
-- [websocat](https://formulae.brew.sh/formula/websocat#default)
-- [yq](https://formulae.brew.sh/formula/yq#default)
+- [`container-structure-test`](https://github.com/GoogleContainerTools/container-structure-test)
+- [`crane`](https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md)
+- [`direnv`](https://github.com/direnv/direnv)
+- [`fluxcd/tap/flux`](https://github.com/fluxcd/flux2) (`flux`)
+- [`git-lfs`](https://github.com/git-lfs/git-lfs)
+- [`glab`](https://gitlab.com/gitlab-org/cli)
+- [`helm`](https://github.com/helm/helm)
+- [`helmfile`](https://github.com/helmfile/helmfile)
+- [`k9s`](https://github.com/derailed/k9s)
+- [`kind`](https://github.com/kubernetes-sigs/kind)
+- [`krew`](https://github.com/kubernetes-sigs/krew)
+- [`kubectx`](https://github.com/ahmetb/kubectx)
+- [`kubernetes-cli`](https://github.com/kubernetes/kubectl) (`kubectl`)
+- [`kustomize`](https://github.com/kubernetes-sigs/kustomize)
+- [`norwoodj/tap/helm-docs`](https://github.com/norwoodj/helm-docs) (`helm-docs`)
+- [`oras`](https://github.com/oras-project/oras)
+- [`podman`](https://github.com/containers/podman)
+- [`skaffold`](https://github.com/GoogleContainerTools/skaffold)
+- [`websocat`](https://github.com/vi/websocat)
+- [`yq`](https://github.com/mikefarah/yq)
 
 ### Kubectl Plugins
 
-The following kubectl plugins are included in ASCE Tools:
+The following [`kubectl` plugins](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins) are included in ASCE Tools:
 
-- []
+- [`kubectl view-secret`](https://artifacthub.io/packages/krew/krew-index/view-secret)
+- [`kubectl view-allocations`](https://github.com/elsesiy/kubectl-view-secret)
+- [`kubectl konfig`](https://github.com/corneliusweig/konfig)
+- [`crossplane`](https://docs.crossplane.io/latest/cli) (not a kubectl plugin)
 
 ### VS Code Extensions
 
@@ -139,3 +145,9 @@ The following VS Code extensions are included in ASCE Tools:
 - [`vincaslt.highlight-matching-tag`](https://marketplace.visualstudio.com/items?itemName=vincaslt.highlight-matching-tag)
 - [`yzane.markdown-pdf`](https://marketplace.visualstudio.com/items?itemName=yzane.markdown-pdf)
 - [`yzhang.markdown-all-in-one`](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)
+
+## Support
+
+- **[Troubleshooting FAQ](../docs/troubleshooting-faq.md)**: consult list of frequently asked questions and their answers.
+- **[Create a support ticket](https://github.com/act3-ace/aceup/issues/new)**: create a support ticket issue on the ACEup GitHub project.
+- **[Mattermost channel](https://chat.git.act3-ace.com/act3/channels/devops)**: create a post in the DevOps channel for assistance.
