@@ -424,7 +424,7 @@ validate_homebrew() {
 
   # Update Homebrew's catalog so the latest verison of dependencies are installed
   echo -n "Running \"brew update\"... "
-  # eat "brew update" failure because it could fail for act3/ace-tools tap
+  # eat "brew update" failure because it could fail for private act3/ace-tools tap
   if log_eval brew update; then
     echo "$green_check"
   else
@@ -822,18 +822,25 @@ authenticate() {
   ############################################################
 
   echo
-  echo "${bold}Setting up the ACT3 Homebrew Tap${normal}"
+  echo "${bold}Adding the ACT3 Homebrew Tap${normal}"
 
-  # Tap act3/ace-tools if not already tapped
+  # Check for deprecated tap
   if [[ $(log_out brew tap) =~ "act3/ace-tools" ]]; then
+    warning "Detected the deprecated act3/ace-tools Homebrew Tap"
+    echo "    Remove with ${bold}brew untap act3/ace-tools${normal}"
+    finish_tasks+=("- Remove the deprecated act3/ace-tools tap ${bold}brew untap act3/ace-tools${normal}")
+  fi
+
+  # Tap act3-ai/tap if not already tapped
+  if [[ $(log_out brew tap) =~ "act3-ai/tap" ]]; then
     success "The ACT3 Homebrew Tap has already been added"
   else
-    if output=$(log_out brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git); then
+    if output=$(log_out brew tap act3-ai/tap); then
       success "Added the ACT3 Homebrew Tap"
     else
       failure_red "Could not add the ACT3 Homebrew Tap"
       echo
-      echo "Output of ${bold}brew tap act3/ace-tools git@git.act3-ace.com:ace/homebrew-ace-tools.git${normal}:"
+      echo "Output of ${bold}brew tap act3-ai/tap${normal}:"
       echo "$output"
       echo
       abort
@@ -855,8 +862,8 @@ authenticate() {
   # Give some info on the tap
   echo
   box_out "${bold}The ACT3 Homebrew Tap is the home for installing and updating ACT3 software${normal}" \
-    "  - Install ACE Tools: ${bold}brew install ace-tools${normal}" \
-    "  - List all ACT3 formulae: ${bold}brew search act3/ace-tools${normal}"
+    "  - Install ASCE Tools: ${bold}brew install-asce-tools${normal}" \
+    "  - List all ACT3 formulae: ${bold}brew search act3-ai/tap${normal}"
 
   ############################################################
   # ACT3 Project Tool GitLab API Credentials
