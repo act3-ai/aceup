@@ -52,8 +52,7 @@ ACT3 Login does the following:
 After running the login script above, new users should also consider installing common ASCE Tools by running the `asce-tools` command:
 
 ```sh
-# Install common ASCE tools
-brew install-asce-tools
+brew asce-tools
 ```
 
 ## Features
