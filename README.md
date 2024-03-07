@@ -34,9 +34,11 @@ Run the [ACT3 Login script](./act3-login/README.md):
 > [!IMPORTANT]
 >
 > Check the [prerequisites](./act3-login/README.md#prerequisites) before running.
+<!-- act3-pt end -->
 
-#### New User Setup
+### New User Setup
 
+<!-- act3-pt ./act3-login/README.md section:new-user-setup -->
 After running the login script above, new users should also consider installing common ASCE Tools by running the `install-asce-tools` command:
 
 ```sh
@@ -65,10 +67,6 @@ Run the [`enable-smart-card-reader` script](./smart-card-reader/enable-smart-car
 Clone the [ACEup](https://github.com/act3-ace/aceup) repository to your system:
 
 ```sh
-# SSH Authentication
-git clone ssh://git@github.com/act3-ace/aceup.git
-
-# HTTPS Authentication
 git clone https://github.com/act3-ace/aceup.git
 ```
 
