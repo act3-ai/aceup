@@ -164,6 +164,9 @@ double_box_out() {
   echo "╚=${b//?/=}=╝"
 }
 
+# git-credential-libsecret
+# docker-credential-helper
+
 ############################################################
 # System Checks
 ############################################################
@@ -440,6 +443,19 @@ validate_homebrew
 if is_linux && dpkg -s dev-tools >/dev/null 2>&1; then
   warning_yellow "WARNING: The deprecated ACT3 \"dev-tools\" Debian package is installed on your system and will conflict with the ACE Tools Homebrew formula. Remove with \"apt remove dev-tools\""
 fi
+
+############################################################
+# Install dependencies with brew bundle
+############################################################
+
+brew bundle --file=- <<EOF
+brew "curl"
+brew "oras"
+brew "yq"
+brew "glab"
+brew "kubectl"
+brew "int128/kubelogin/kubelogin"
+EOF
 
 ############################################################
 ############################################################
@@ -993,10 +1009,7 @@ EOF
     # Make sure file exists
     {
       mkdir -p "$HOME/.kube"
-      chmod 700 "$HOME/.kube" # permissions for only user read/write
       touch -a "$CLUSTERCONFIG"
-      chmod 700 "$CLUSTERCONFIG" # permissions for only user read/write
-      [ -f "$HOME/.kube/config" ] && chmod 700 "$HOME/.kube/config"
     } || failure "Could not check for the ${bold}~/.kube${normal} directory"
 
     # Write to it
@@ -1056,7 +1069,8 @@ EOF
     fi
 
     {
-      KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$HOMEBREW_PREFIX/bin/kubectl" config view --raw >~/.kube/config.new && cp ~/.kube/config.new ~/.kube/config
+      KUBECONFIG=~/.kube/config:"$CLUSTERCONFIG" "$HOMEBREW_PREFIX/bin/kubectl" config view --raw >~/.kube/config.new
+      cp ~/.kube/config.new ~/.kube/config
       success "Merged cluster configuration into ${bold}$HOME/.kube/config${normal}"
     } || {
       failure "Could not merge configuration, aborting"
@@ -1070,6 +1084,11 @@ EOF
   [Yy]*) setup_cluster_access || failure "Could not set up cluster access" ;; # don't fail here
   *) echo "Skipping cluster access setup" ;;
   esac
+
+  # Always set kubeconfig file permissions
+  # for only user read/write
+  [ -d "$HOME/.kube/" ] && chmod 700 "$HOME/.kube/"
+  [ -f "$HOME/.kube/config" ] && chmod 600 "$HOME/.kube/config"
 
   ############################################################
   # ACE Hub User Configuration File
