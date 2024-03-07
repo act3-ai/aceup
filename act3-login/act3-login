@@ -261,50 +261,6 @@ abort() {
 }
 
 ############################################################
-# Homebrew functions
-############################################################
-
-# Ensures a Homebrew formula is installed
-brew_install() {
-  # Check if installed: brew list
-  #  If installed, upgrade: brew upgrade
-  #  If not installed, install: brew install
-  if log_eval brew list "$1"; then
-    success "${1} already installed"
-    # Formula is already installed, upgrade it
-    log_eval brew upgrade "$1" || warning "Could not upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
-  else
-    # Formula is not installed, install it
-    if output=$(log_out brew install "$1"); then
-      success "Installed $1"
-    else
-      failure_red "Failed to install required dependency ${1}."
-      echo
-      echo "Output of ${bold}brew install ${1}${normal}:"
-      echo "$output"
-      echo
-      abort # Fail if dependency cannot be met
-    fi
-  fi
-}
-
-# Upgrades a homebrew dependency if it is installed
-brew_upgrade() {
-  # Check if installed: brew list
-  #  If installed, upgrade: brew upgrade
-  #  If not installed, return without error
-  if log_eval brew list "$1"; then
-    # Formula is already installed, upgrade it
-    if log_eval brew upgrade "$1"; then
-      success "Upgraded ${1}"
-    else
-      warning "Failed to upgrade ${1}. Check log file: ${bold}${LOG_FILE}${normal}"
-    fi
-  fi
-  # FAILED UPGRADE SHOULD NOT EXIT THE SCRIPT
-}
-
-############################################################
 # Semver Functions
 ############################################################
 
@@ -422,17 +378,26 @@ validate_homebrew() {
   else
     failure "Failed"
     warning_yellow "WARNING: Running \"brew doctor\" detected issues with your Homebrew installation that could impact ACT3 Login."
-    finish_tasks+=("- Fix issues identified by running ${bold}brew doctor${normal}")
+    finish_tasks+=("- Fix issues identified by running ${blue}brew doctor${normal}")
   fi
 
-  # Update Homebrew's catalog so the latest verison of dependencies are installed
-  echo -n "Running \"brew update\"... "
-  # eat "brew update" failure because it could fail for private act3/ace-tools tap
-  if log_eval brew update; then
-    echo "$green_check"
-  else
-    warning_yellow "Failed"
+  # Remove old Homebrew tap
+  if [[ $(log_out brew tap) =~ "act3/ace-tools" ]]; then
+    if log_eval brew untap act3/ace-tools; then
+      success "Removed the deprecated ${bold}act3/ace-tools${normal} Homebrew tap"
+    else
+      failure "Could not remove the deprecated ${bold}act3/ace-tools${normal} Homebrew tap"
+      finish_tasks+=("- Remove the deprecated ${bold}act3/ace-tools${normal} Homebrew tap: ${blue}brew untap act3/ace-tools${normal}")
+    fi
   fi
+
+  # # Update Homebrew's catalog so the latest version of dependencies are installed
+  # echo -n "Running \"brew update\"... "
+  # if log_eval brew update; then
+  #   echo "$green_check"
+  # else
+  #   warning_yellow "Failed"
+  # fi
 }
 
 system_check
@@ -448,10 +413,16 @@ fi
 # Install dependencies with brew bundle
 ############################################################
 
+echo
+echo "${bold}Installing dependencies with brew bundle:${normal}"
+
 brew bundle --file=- <<EOF
+tap "act3-ai/tap"
 brew "curl"
-brew "oras"
 brew "yq"
+brew "git-credential-libsecret" if OS.linux?
+brew "oras"
+brew "docker-credential-helper"
 brew "glab"
 brew "kubectl"
 brew "int128/kubelogin/kubelogin"
@@ -492,11 +463,6 @@ fi
 
 echo
 echo "${bold}Validating GitLab Personal Access Token${normal}"
-
-echo -n "Installing curl to request token information... "
-brew_install "curl"
-echo -n "Installing yq to check response... "
-brew_install "yq"
 
 token_valid="true"
 
@@ -677,10 +643,6 @@ authenticate() {
     echo
     echo "Skipping HTTPS credential storage."
   elif is_linux; then
-    # Install git-credential-libsecret
-    echo "Installing git-credential-libsecret for secure credential storage:"
-    brew_install "git-credential-libsecret"
-
     log_eval git config --global credential.helper "libsecret"
     success "Configured Git to use credential helper ${bold}libsecret${normal}"
 
@@ -692,12 +654,6 @@ authenticate() {
       check_logs
     fi
   elif is_macos; then
-    # if [[ $(command -v git) != "/usr/bin/git" ]]; then
-    #   warning "ACT3 recommends ${bold}/usr/bin/git${normal} for macOS, detected alternate installation of Git ${bold}$(command -v git)${normal}"
-    #   # echo "Remove ${bold}$(command -v git)${normal} and rerun ACT3 Login to use the macOS Keychain for Git."
-    #   # echo "${yellow}macOS Keychain credential storage is only available for ${bold}/usr/bin/git${normal}${yellow}, skipping HTTPS credential setup for Git.${normal}"
-    # fi
-
     # "osxkeychain" comes with Git, no additional install needed
     # https://git-scm.com/book/sv/v2/Git-Tools-Credential-Storage
     log_eval git config --global credential.helper "osxkeychain"
@@ -807,15 +763,8 @@ authenticate() {
   echo
   echo "${bold}Setting up credentials for the ACT3 GitLab Container Registry${normal}"
 
-  # Use oras to log in to reg.git.act3-ace.com (oras checks login success)
-  echo -n "Installing oras to log into the registry... "
-  brew_install "oras"
-
   # Use yq to add credsStore field to ~/.docker/config.json
   if ! is_wsl; then
-    echo -n "Installing docker-credential-helper for secure credential storage... "
-    brew_install "docker-credential-helper"
-
     CREDS_STORE="secretservice"
     is_macos && CREDS_STORE="osxkeychain"
 
@@ -834,61 +783,11 @@ authenticate() {
   fi
 
   ############################################################
-  # ACT3 Homebrew Tap
-  ############################################################
-
-  echo
-  echo "${bold}Adding the ACT3 Homebrew Tap${normal}"
-
-  # Check for deprecated tap
-  if [[ $(log_out brew tap) =~ "act3/ace-tools" ]]; then
-    warning "Detected the deprecated act3/ace-tools Homebrew Tap"
-    echo "    Remove with ${bold}brew untap act3/ace-tools${normal}"
-    finish_tasks+=("- Remove the deprecated act3/ace-tools tap ${bold}brew untap act3/ace-tools${normal}")
-  fi
-
-  # Tap act3-ai/tap if not already tapped
-  if [[ $(log_out brew tap) =~ "act3-ai/tap" ]]; then
-    success "The ACT3 Homebrew Tap has already been added"
-  else
-    if output=$(log_out brew tap act3-ai/tap); then
-      success "Added the ACT3 Homebrew Tap"
-    else
-      failure_red "Could not add the ACT3 Homebrew Tap"
-      echo
-      echo "Output of ${bold}brew tap act3-ai/tap${normal}:"
-      echo "$output"
-      echo
-      abort
-    fi
-  fi
-
-  # Upgrade Homebrew Formulae again now that we are authenticated to the ACT3 Homebrew Tap
-  echo "Updating ACT3 Homebrew Tap:"
-
-  echo -n "   Running brew update... "
-  {
-    log_eval brew update
-    echo "$green_check"
-  } || {
-    echo "${red_x}"
-    echo "   ${yellow}WARNING: ${bold}brew update${normal}${yellow} failed.${normal} Check logs: $LOG_FILE"
-  }
-
-  # Give some info on the tap
-  echo
-  box_out "${bold}The ACT3 Homebrew Tap is the home for installing and updating ACT3 software${normal}" \
-    "  - Install ASCE Tools: ${bold}brew asce-tools${normal}" \
-    "  - List all ACT3 formulae: ${bold}brew search act3-ai/tap${normal}"
-
-  ############################################################
   # ACT3 Project Tool GitLab API Credentials
   ############################################################
 
   echo
   echo "${bold}Setting up authentication for the GitLab CLI (glab) and ACT3 Project Tool (act3-pt)${normal}"
-
-  brew_install "glab"
 
   # Check for keyring support
   if is_wsl; then
@@ -990,13 +889,6 @@ EOF
   echo "${bold}Set up ACT3 Kubernetes cluster access${normal}"
 
   setup_cluster_access() {
-    echo -n "Installing Kubectl for cluster access... "
-    brew_install "kubectl"
-
-    echo -n "Installing the Kubectl OIDC plugin for cluster authentication... "
-    # Tap: https://github.com/int128/homebrew-kubelogin
-    brew_install "int128/kubelogin/kubelogin"
-
     if is_wsl; then
       echo -n "Installing wsl-open, an xdg-open alternative for WSL... "
       # Repo: https://gitlab.com/4U6U57/wsl-open
@@ -1258,9 +1150,12 @@ EOF
 
   echo
   echo "${bold}${green}Success!${normal}"
+  echo
+  echo "${bold}Next steps:${normal}"
+  echo "- Install ASCE Tools: ${blue}brew asce-tools${normal}"
 
   if ! [ ${#finish_tasks[@]} -eq 0 ]; then
-    # Add header
+    # Add header row
     echo
     box_out "${yellow}${bold}Complete the following tasks to finish authentication${normal}" "${finish_tasks[@]}"
   fi
