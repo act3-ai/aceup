@@ -37,11 +37,11 @@ Run the [ACT3 Login script](./act3-login/README.md):
 
 #### New User Setup
 
-After running the login script above, new users should also consider installing common ASCE Tools by running the `install-asce-tools` command:
+After running the login script above, new users should also consider installing common ASCE Tools by running the `asce-tools` command:
 
 ```sh
 # Install common ASCE tools
-brew install-asce-tools
+brew asce-tools
 ```
 <!-- act3-pt end -->
 

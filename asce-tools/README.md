@@ -10,7 +10,7 @@ Software installed by the ASCE Tools command will be kept up-to-date with `brew 
 
 ## Usage
 
-It is recommended to use the ACT3 Homebrew Tap's `install-asce-tools` command to install ASCE Tools. If you would like to install ASCE Tools without using the ACT3 Homebrew Tap, follow the [standalone usage instructions](#standalone-usage) below.
+It is recommended to use the ACT3 Homebrew Tap's `asce-tools` command to install ASCE Tools. If you would like to install ASCE Tools without using the ACT3 Homebrew Tap, follow the [standalone usage instructions](#standalone-usage) below.
 
 To add the ACT3 Homebrew Tap, run:
 
@@ -18,10 +18,10 @@ To add the ACT3 Homebrew Tap, run:
 brew tap act3-ai/tap
 ```
 
-Then, run the `install-asce-tools` command:
+Then, run the `asce-tools` command:
 
 ```sh
-brew install-asce-tools
+brew asce-tools
 ```
 
 ### Standalone Usage

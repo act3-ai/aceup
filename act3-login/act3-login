@@ -862,7 +862,7 @@ authenticate() {
   # Give some info on the tap
   echo
   box_out "${bold}The ACT3 Homebrew Tap is the home for installing and updating ACT3 software${normal}" \
-    "  - Install ASCE Tools: ${bold}brew install-asce-tools${normal}" \
+    "  - Install ASCE Tools: ${bold}brew asce-tools${normal}" \
     "  - List all ACT3 formulae: ${bold}brew search act3-ai/tap${normal}"
 
   ############################################################
