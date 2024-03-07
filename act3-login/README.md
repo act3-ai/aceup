@@ -45,15 +45,15 @@ ACT3 Login does the following:
 
 > [!IMPORTANT]
 >
-> Check the [prerequisites](README.md#prerequisites) before running.
+> Check the [prerequisites](#prerequisites) before running.
 
-### New User Setup
+## New User Setup
 
 After running the login script above, new users should also consider installing common ASCE Tools by running the `asce-tools` command:
 
 ```sh
 # Install common ASCE tools
-brew asce-tools
+brew install-asce-tools
 ```
 
 ## Features
