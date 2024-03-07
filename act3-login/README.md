@@ -1,5 +1,7 @@
 # ACT3 Login
 
+## Overview
+
 ACT3 Login is designed to:
 
 - Authenticate users to ACT3 services
