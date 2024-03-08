@@ -1,5 +1,9 @@
 # ACEup
 
+> [!WARNING] THIS REPOSITORY HAS MIGRATED
+>
+> The ACEup repository has moved to GitLab: <https://gitlab.com/act3-ai/asce/up>
+
 ## Overview
 
 The ACEup repository is a collection of script-based tools and resources to bootstrap access to ACT3 services. The following tools are contained in this repo:
